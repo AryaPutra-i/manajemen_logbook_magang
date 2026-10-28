@@ -40,19 +40,34 @@ class User extends Authenticatable
         return $this->belongsTo(Puskesmas::class, 'puskesmas_id');
     }
 
-    public function daftarLogYangDimiliki()
+    public function daftarLogDokterMagang()
     {
-        return $this->hasMany(LogMagang::class, 'dokter_magang_id');
+        return $this->hasMany(LogDokterMagang::class, 'dokter_magang_id');
     }
 
-    public function daftarLogYangDiverifikasi()
+    public function daftarLogMahasiswaMagang()
     {
-        return $this->hasMany(LogMagang::class, 'pembimbing_lapangan_id');
+        return $this->hasMany(LogMahasiswaMagang::class, 'mahasiswa_magang_id');
     }
 
-    public function daftarPerubahanData()
+    public function daftarLogDokterYangDiverifikasi()
+    {
+        return $this->hasMany(LogDokterMagang::class, 'pembimbing_lapangan_id');
+    }
+
+    public function daftarLogMahasiswaYangDiverifikasi()
+    {
+        return $this->hasMany(LogMahasiswaMagang::class, 'pembimbing_lapangan_id');
+    }
+
+    public function daftarPerubahanDataDokterMagang()
     {
         return $this->hasMany(RiwayatProfilDokterMagang::class, 'dokter_magang_id');
+    }
+
+    public function daftarPerubahanDataMahasiswaMagang()
+    {
+        return $this->hasMany(RiwayatProfilMahasiswaMagang::class, 'mahasiswa_magang_id');
     }
 
     public static function generateUniqueUsername(string $nama): string
