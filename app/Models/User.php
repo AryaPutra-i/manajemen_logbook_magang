@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['username', 'password', 'role', 'nama', 'nip', 'nik', 'nim', 'alamat', 'universitas', 'is_profile_change_pending', 'puskesmas_id'])]
+#[Fillable(['username', 'password', 'role', 'nama', 'nip', 'nik', 'nim', 'alamat', 'universitas', 'is_profile_change_pending', 'puskesmas_id', 'departemen_id'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -40,6 +40,11 @@ class User extends Authenticatable
         return $this->belongsTo(Puskesmas::class, 'puskesmas_id');
     }
 
+    public function departemen()
+    {
+        return $this->belongsTo(Departemen::class, 'departemen_id');
+    }
+
     public function daftarLogDokterMagang()
     {
         return $this->hasMany(LogDokterMagang::class, 'dokter_magang_id');
@@ -57,7 +62,7 @@ class User extends Authenticatable
 
     public function daftarLogMahasiswaYangDiverifikasi()
     {
-        return $this->hasMany(LogMahasiswaMagang::class, 'pembimbing_lapangan_id');
+        return $this->hasMany(LogMahasiswaMagang::class, 'pembimbing_lapangan_mahasiswa_id');
     }
 
     public function daftarPerubahanDataDokterMagang()

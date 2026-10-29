@@ -10,6 +10,6 @@ class RiwayatProfilMahasiswaMagang extends Model
 {
     public function mahasiswaMagang()
     {
-     return $this->belongsTo(User::class, 'mahasiswa_magang_id');   
+     return $this->belongsTo(User::class, 'mahasiswa_magang_id');
     }
 }
