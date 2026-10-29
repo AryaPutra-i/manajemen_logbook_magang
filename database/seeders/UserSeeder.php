@@ -1,7 +1,6 @@
 <?php
 
 namespace Database\Seeders;
-
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -49,6 +48,19 @@ class UserSeeder extends Seeder
             'alamat' => null,
             'universitas' => null,
             'puskesmas_id' => 1,
+        ]);
+
+        User::factory()->create([
+            'username' => 'mahasiswa.magang',
+            'password' => 'password123',
+            'role' => 'mahasiswa_magang',
+            'nip' => null,
+            'nik' => fake()->regexify('[0-9]{16}'),
+            'nim' => fake()->regexify('[0-9]{10}'),
+            'alamat' => fake()->streetAddress(),
+            'universitas' => fake()->company(),
+            'puskesmas_id' => null,
+
         ]);
     }
 }

@@ -11,14 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('log_mahasiswa_magang', function (Blueprint $table) {
+        Schema::create('log_mahasiswa_magangs', function (Blueprint $table) {
             $table->id();
             $table->date('tanggal');
             $table->text('nama_kegiatan');
             $table->text('deskripsi');
             $table->enum('status_verifikasi', array_column(StatusLogMagang::cases(), 'value'))->default(StatusLogMagang::Pending->value);
-            $table->foreignId('id_mahasiswa_magang')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('id_pembimbing_lapangan')->nullable()->constrained('users')->cascadeOnDelete();
+            $table->foreignId('mahasiswa_magang_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('pembimbing_lapangan_id')->nullable()->constrained('users')->cascadeOnDelete();
             $table->timestamps();
         });
     }
@@ -28,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('log_mahasiswa_magang');
+        Schema::dropIfExists('log_mahasiswa_magangs');
     }
 };
