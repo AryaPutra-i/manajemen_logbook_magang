@@ -2,15 +2,15 @@
 
 namespace App\Models;
 
-use Database\Factories\LogMagangFactory;
+use Database\Factories\LogDokterMagangFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 #[Fillable('jumlah_pasien_per_kategori_pelayanan_kesehatan', 'tanggal', 'puskesmas_id', 'dokter_magang_id', 'deskripsi', 'hambatan', 'dokumentasi', 'status_verifikasi')]
-class LogMagang extends Model
+class LogDokterMagang extends Model
 {
-    /** @use HasFactory<LogMagangFactory> */
+    /** @use HasFactory<LogDokterMagangFactory> */
     use HasFactory;
 
     protected $casts = [

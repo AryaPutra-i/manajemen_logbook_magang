@@ -13,8 +13,8 @@ class Puskesmas extends Model
         return $this->hasMany(User::class, 'puskesmas_id');
     }
 
-    public function daftarLogMagang()
+    public function daftarLogDokterMagang()
     {
-        return $this->hasMany(LogMagang::class, 'puskesmas_id');
+        return $this->hasMany(LogDokterMagang::class, 'puskesmas_id');
     }
 }

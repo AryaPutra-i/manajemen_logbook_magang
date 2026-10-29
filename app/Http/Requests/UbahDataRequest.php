@@ -29,7 +29,7 @@ class UbahDataRequest extends FormRequest
             'nama' => ['required', 'string', 'max:255'],
         ];
 
-        if ($user->role === 'dokter_magang') {
+        if (in_array($user->role, ['dokter_magang', 'mahasiswa_magang'], true)) {
             $rules['nik'] = ['nullable', 'string', 'size:16', Rule::unique('users')->ignore($user->id)];
             $rules['nim'] = ['nullable', 'string', 'max:255', Rule::unique('users')->ignore($user->id)];
             $rules['alamat'] = ['nullable', 'string', 'max:255'];
