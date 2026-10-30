@@ -26,8 +26,12 @@ class VerifikasiUbahDataController extends Controller
 
     private function scopedDokterMagang(User $dokterMagang): void
     {
-        if ($dokterMagang->role !== 'dokter_magang'
-            || $dokterMagang->puskesmas_id !== request()->user()->puskesmas_id
+        $user = request()->user();
+
+        if ($user->role !== 'pembimbing_lapangan'
+            || ! $user->puskesmas_id
+            || $dokterMagang->role !== 'dokter_magang'
+            || $dokterMagang->puskesmas_id !== $user->puskesmas_id
             || ! $dokterMagang->is_profile_change_pending) {
             abort(403);
         }
