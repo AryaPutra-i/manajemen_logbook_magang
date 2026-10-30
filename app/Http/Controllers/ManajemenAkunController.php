@@ -6,8 +6,10 @@ use App\Http\Requests\TambahAkunRequest;
 use App\Http\Requests\UbahDataRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Imports\UsersImport;
+use App\Models\Departemen;
 use App\Models\Puskesmas;
 use App\Models\RiwayatProfilDokterMagang;
+use App\Models\RiwayatProfilMahasiswaMagang;
 use App\Models\User;
 use DB;
 use Hash;
@@ -31,14 +33,19 @@ class ManajemenAkunController extends Controller
     public function create()
     {
         $daftarNamaPuskesmas = Puskesmas::select('nama')->pluck('nama')->toArray();
+        $daftarNamaDepartemen = Departemen::select('nama')->pluck('nama')->toArray();
 
-        return view('tambah-akun', compact('daftarNamaPuskesmas'));
+        return view('tambah-akun', compact('daftarNamaPuskesmas', 'daftarNamaDepartemen'));
     }
 
     public function editData()
     {
         $user = request()->user();
-        $dataBaru = RiwayatProfilDokterMagang::where('dokter_magang_id', $user->id)->latest()->first();
+        $dataBaru = match ($user->role) {
+            'dokter_magang' => RiwayatProfilDokterMagang::where('dokter_magang_id', $user->id)->latest()->first(),
+            'mahasiswa_magang' => RiwayatProfilMahasiswaMagang::where('mahasiswa_magang_id', $user->id)->latest()->first(),
+            default => null,
+        };
 
         return view('ubah-data', compact('user', 'dataBaru'));
     }
@@ -51,7 +58,7 @@ class ManajemenAkunController extends Controller
 
         $status = 'Data akun Anda berhasil di-update';
 
-        if ($user->role === 'dokter_magang') {
+        if (in_array($user->role, ['dokter_magang', 'mahasiswa_magang'], true)) {
             if ($user->is_profile_change_pending) {
                 return back()->withErrors(['status' => 'Ubah data masih dalam status pending']);
             }
@@ -61,7 +68,11 @@ class ManajemenAkunController extends Controller
 
             $status .= ', silahkan konfirmasi ke pembimbing lapangan';
 
-            RiwayatProfilDokterMagang::create([...$request->validated(), 'dokter_magang_id' => $user->id]);
+            if ($user->role === 'dokter_magang') {
+                RiwayatProfilDokterMagang::create([...$request->validated(), 'dokter_magang_id' => $user->id]);
+            } else {
+                RiwayatProfilMahasiswaMagang::create([...$request->validated(), 'mahasiswa_magang_id' => $user->id]);
+            }
         } else {
             $user->update($request->validated());
         }
@@ -74,12 +85,19 @@ class ManajemenAkunController extends Controller
         $validated = $request->validated();
 
         if ($validated['role'] === 'admin') {
-            return back()->withErrors('status', 'Menambah akun dengan role admin tidak diperbolehkan');
+            return back()->withErrors(['status' => 'Menambah akun dengan role admin tidak diperbolehkan']);
         }
 
         $username = User::generateUniqueUsername($validated['nama']);
 
-        User::create([...$validated, 'username' => $username, 'password' => Hash::make('password123'), 'puskesmas_id' => Puskesmas::where('nama', $validated['namaPuskesmas'] ?? null)->value('id')]);
+        $puskesmasId = in_array($validated['role'], ['dokter_magang', 'pembimbing_lapangan'], true)
+            ? Puskesmas::where('nama', $validated['namaPuskesmas'] ?? null)->value('id')
+            : null;
+        $departemenId = in_array($validated['role'], ['mahasiswa_magang', 'pembimbing_lapangan_mahasiswa'], true)
+            ? Departemen::where('nama', $validated['namaDepartemen'] ?? null)->value('id')
+            : null;
+
+        User::create([...$validated, 'username' => $username, 'password' => Hash::make('password123'), 'puskesmas_id' => $puskesmasId, 'departemen_id' => $departemenId]);
 
         return redirect()->route('akun.menu')->with('status', 'Akun berhasil ditambah');
     }
@@ -87,8 +105,22 @@ class ManajemenAkunController extends Controller
     public function update(UpdateUserRequest $request, User $user)
     {
         $validated = $request->validated();
+        $role = $validated['role'] ?? $user->role;
 
-        $user->update([...$validated, 'puskesmas_id' => Puskesmas::where('nama', $validated['namaPuskesmas'] ?? null)->value('id')]);
+        $namaPuskesmas = $validated['namaPuskesmas']
+            ?? $user->puskesmas?->nama;
+
+        $namaDepartemen = $validated['namaDepartemen']
+            ?? $user->departemen?->nama;
+
+        $puskesmasId = in_array($role, ['dokter_magang', 'pembimbing_lapangan'], true)
+            ? Puskesmas::where('nama', $namaPuskesmas ?? null)->value('id')
+            : null;
+        $departemenId = in_array($role, ['mahasiswa_magang', 'pembimbing_lapangan_mahasiswa'], true)
+            ? Departemen::where('nama', $namaDepartemen ?? null)->value('id')
+            : null;
+
+        $user->update([...$validated, 'puskesmas_id' => $puskesmasId, 'departemen_id' => $departemenId]);
 
         return redirect()->route('akun.menu')->with('status', "Akun dengan username $user->username berhasil di-update");
     }
@@ -110,8 +142,9 @@ class ManajemenAkunController extends Controller
     public function edit(User $user)
     {
         $daftarNamaPuskesmas = Puskesmas::select('nama')->pluck('nama')->toArray();
+        $daftarNamaDepartemen = Departemen::select('nama')->pluck('nama')->toArray();
 
-        return view('edit-akun', compact('user', 'daftarNamaPuskesmas'));
+        return view('edit-akun', compact('user', 'daftarNamaPuskesmas', 'daftarNamaDepartemen'));
     }
 
     public function import(Request $request)
