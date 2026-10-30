@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             PuskesmasSeeder::class,
             UserSeeder::class,
             KategoriPelayananKesehatanSeeder::class,
+            DepartemenSeeder::class,
             // LogMagangSeeder::class,
         ]);
     }
