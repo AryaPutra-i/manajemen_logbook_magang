@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-#[Fillable('nama_kegiatan', 'tanggal', 'deskripsi', 'mahasiswa_magang_id', 'departemen_id', 'dokumentasi', 'status_verifikasi')]
+#[Fillable('nama_kegiatan', 'tanggal', 'deskripsi', 'mahasiswa_magang_id', 'pembimbing_lapangan_mahasiswa_id', 'departemen_id', 'dokumentasi', 'status_verifikasi')]
 class LogMahasiswaMagang extends Model
 {
     /** @use HasFactory<LogMahasiswaMagangFactory> */

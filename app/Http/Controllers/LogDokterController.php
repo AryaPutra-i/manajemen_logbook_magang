@@ -150,8 +150,6 @@ class LogDokterController extends Controller
         $logMagang = LogDokterMagang::findOrFail($id);
         $user = request()->user();
 
-        abort_unless($user->role === 'dokter_magang', 404);
-
         if ($user->role !== 'admin' && $logMagang->dokter_magang_id !== $user->id) {
             return back()->withErrors(['status' => 'Anda tidak dapat menghapus log milik orang lain']);
         }
@@ -179,6 +177,8 @@ class LogDokterController extends Controller
         ]);
 
         $user = User::where('username', $validated['username'])->firstOrFail();
+
+        abort_unless($user->role === 'dokter_magang', 404);
 
         $tanggalLogMulai = Carbon::createFromFormat('Y-m-d', $validated['tanggalLogMulai'])->startOfDay();
         $tanggalLogAkhir = Carbon::createFromFormat('Y-m-d', $validated['tanggalLogAkhir'])->endOfDay();

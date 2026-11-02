@@ -25,6 +25,8 @@ class LogMahasiswaController extends Controller
      */
     public function storeMahasiswa(LogMahasiswaMagangRequest $request)
     {
+        abort_if(! $request->user()->departemen_id, 422, 'Akun mahasiswa belum memiliki departemen.');
+
         $validated = $request->validated();
 
         $filePath = $request->file('dokumentasi')->store('uploads', 'public');

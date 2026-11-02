@@ -62,11 +62,11 @@ Route::middleware(['auth'])->group(function () {
     });
 
     Route::middleware(['role:admin,dokter_magang,pembimbing_lapangan'])->group(function () {
-        Route::get('/manajemen-logbook/{logMagang}/edit-log', [LogDokterController::class, 'edit'])->name('logbook.edit');
         Route::get('/manajemen-logbook/{logMagang}/detail-log', [LogDokterController::class, 'edit'])->name('logbook.detail');
-        Route::put('/manajemen-logbook/{id}', [LogDokterController::class, 'update'])->name('logbook.update');
-        Route::delete('/manajemen-logbook/{id}', [LogDokterController::class, 'destroy'])->name('logbook.destroy');
     });
+    Route::middleware(['role:dokter_magang'])->get('/manajemen-logbook/{logMagang}/edit-log', [LogDokterController::class, 'edit'])->name('logbook.edit');
+    Route::middleware(['role:dokter_magang'])->put('/manajemen-logbook/{id}', [LogDokterController::class, 'update'])->name('logbook.update');
+    Route::middleware(['role:admin,dokter_magang'])->delete('/manajemen-logbook/{id}', [LogDokterController::class, 'destroy'])->name('logbook.destroy');
 
     Route::middleware(['role:mahasiswa_magang'])->group(function () {
         Route::post('/manajemen-logbook-mahasiswa', [LogMahasiswaController::class, 'storeMahasiswa'])->name('logbook.mahasiswa.store');
@@ -74,11 +74,11 @@ Route::middleware(['auth'])->group(function () {
     });
 
     Route::middleware(['role:admin,mahasiswa_magang,pembimbing_lapangan_mahasiswa'])->group(function () {
-        Route::get('/manajemen-logbook-mahasiswa/{logMagang}/edit-log', [LogMahasiswaController::class, 'editMahasiswa'])->name('logbook.mahasiswa.edit');
         Route::get('/manajemen-logbook-mahasiswa/{logMagang}/detail-log', [LogMahasiswaController::class, 'editMahasiswa'])->name('logbook.mahasiswa.detail');
-        Route::put('/manajemen-logbook-mahasiswa/{id}', [LogMahasiswaController::class, 'updateMahasiswa'])->name('logbook.mahasiswa.update');
-        Route::delete('/manajemen-logbook-mahasiswa/{id}', [LogMahasiswaController::class, 'destroyMahasiswa'])->name('logbook.mahasiswa.destroy');
     });
+    Route::middleware(['role:mahasiswa_magang'])->get('/manajemen-logbook-mahasiswa/{logMagang}/edit-log', [LogMahasiswaController::class, 'editMahasiswa'])->name('logbook.mahasiswa.edit');
+    Route::middleware(['role:mahasiswa_magang'])->put('/manajemen-logbook-mahasiswa/{id}', [LogMahasiswaController::class, 'updateMahasiswa'])->name('logbook.mahasiswa.update');
+    Route::middleware(['role:admin,mahasiswa_magang'])->delete('/manajemen-logbook-mahasiswa/{id}', [LogMahasiswaController::class, 'destroyMahasiswa'])->name('logbook.mahasiswa.destroy');
 
     Route::middleware(['role:pembimbing_lapangan'])->group(function () {
         Route::get('/manajemen-akun/manajemen-ubah-data', [VerifikasiUbahDataController::class, 'index'])->name('ubah-data.queue');
