@@ -31,7 +31,7 @@ class UpdateUserRequest extends FormRequest
             'role' => ['nullable', new Enum(UserRole::class)],
             'nama' => ['required', 'string', 'max:255'],
             'namaPuskesmas' => ['nullable', 'string', 'max:255', Rule::exists('puskesmas', 'nama')],
-            'namaDepartemen' => ['nullable', 'string', 'max:255', Rule::exists('departemen', 'nama')],
+            'namaDepartemen' => ['nullable', 'string', 'max:255', Rule::exists('departemens', 'nama')],
             'nip' => ['nullable', 'string', 'size:18', Rule::unique('users')->ignore($userId)],
             'nik' => ['nullable', 'string', 'size:16', Rule::unique('users')->ignore($userId)],
             'nim' => ['nullable', 'string', 'max:255', Rule::unique('users')->ignore($userId)],

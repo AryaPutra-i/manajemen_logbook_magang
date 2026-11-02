@@ -29,7 +29,7 @@ class TambahAkunRequest extends FormRequest
             'role' => ['required', new Enum(UserRole::class)],
             'nama' => ['required', 'string', 'max:255'],
             'namaPuskesmas' => ['nullable', 'string', 'max:255', Rule::exists('puskesmas', 'nama')],
-            'namaDepartemen' => ['nullable', 'string', 'max:255', Rule::exists('departemen', 'nama')],
+            'namaDepartemen' => ['nullable', 'string', 'max:255', Rule::exists('departemens', 'nama')],
             'nip' => ['nullable', 'string', 'size:18', 'unique:users,nip'],
             'nik' => ['nullable', 'string', 'size:16', 'unique:users,nik'],
             'nim' => ['nullable', 'string', 'max:255', 'unique:users,nim'],
