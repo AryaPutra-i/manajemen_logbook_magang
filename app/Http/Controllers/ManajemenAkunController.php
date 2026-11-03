@@ -59,22 +59,39 @@ class ManajemenAkunController extends Controller
         $status = 'Data akun Anda berhasil di-update';
 
         if (in_array($user->role, ['dokter_magang', 'mahasiswa_magang'], true)) {
-            if ($user->is_profile_change_pending) {
+            $riwayatPerubahan = $user->role === 'dokter_magang'
+                ? RiwayatProfilDokterMagang::where('dokter_magang_id', $user->id)
+                : RiwayatProfilMahasiswaMagang::where('mahasiswa_magang_id', $user->id);
+
+            if ($user->is_profile_change_pending && $riwayatPerubahan->exists()) {
                 return back()->withErrors(['status' => 'Ubah data masih dalam status pending']);
             }
 
-            $user->is_profile_change_pending = true;
-            $user->save();
-
+            $isResubmitting = $user->is_profile_change_pending;
             $status .= ', silahkan konfirmasi ke pembimbing lapangan';
 
-            if ($user->role === 'dokter_magang') {
-                RiwayatProfilDokterMagang::create([...$request->validated(), 'dokter_magang_id' => $user->id]);
-            } else {
-                RiwayatProfilMahasiswaMagang::create([...$request->validated(), 'mahasiswa_magang_id' => $user->id]);
+            DB::transaction(function () use ($request, $user): void {
+                if ($user->role === 'dokter_magang') {
+                    RiwayatProfilDokterMagang::create([...$request->validated(), 'dokter_magang_id' => $user->id]);
+                } else {
+                    RiwayatProfilMahasiswaMagang::create([...$request->validated(), 'mahasiswa_magang_id' => $user->id]);
+                }
+
+                $user->is_profile_change_pending = true;
+                $user->save();
+            });
+
+            if ($isResubmitting) {
+                $status = 'Pengajuan ubah data berhasil dikirim ulang, silahkan konfirmasi ke pembimbing lapangan';
             }
         } else {
-            $user->update($request->validated());
+            $validated = $request->validated();
+
+            if ($user->nama !== $validated['nama']) {
+                $validated['username'] = User::generateUniqueUsername($validated['nama'], $user->id);
+            }
+
+            $user->update($validated);
         }
 
         return back()->with('status', $status);
@@ -120,7 +137,13 @@ class ManajemenAkunController extends Controller
             ? Departemen::where('nama', $namaDepartemen ?? null)->value('id')
             : null;
 
-        $user->update([...$validated, 'puskesmas_id' => $puskesmasId, 'departemen_id' => $departemenId]);
+        $updatedData = [...$validated, 'puskesmas_id' => $puskesmasId, 'departemen_id' => $departemenId];
+
+        if ($user->nama !== $validated['nama']) {
+            $updatedData['username'] = User::generateUniqueUsername($validated['nama'], $user->id);
+        }
+
+        $user->update($updatedData);
 
         return redirect()->route('akun.menu')->with('status', "Akun dengan username $user->username berhasil di-update");
     }

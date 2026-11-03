@@ -134,7 +134,7 @@
 
             function handleAddCategory() {
                 kategoriPelayananKesehatanColumn.insertAdjacentHTML('beforeend', `
-                    <select value="{{ $namaKategoriPelayananKesehatan }}" required class="form-control"
+                    <select required class="form-control"
                         name="kategoriPelayananKesehatan[]" id="kategoriPelayananKesehatan-${count}">
                         <option selected disabled value>-- Pilih Kategori Pelayanan Kesehatan --</option>
                         @foreach ($daftarKategoriPelayananKesehatan as $kategoriPelayananKesehatan)

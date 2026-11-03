@@ -11,7 +11,7 @@
             <div class="modal-body" style="background-color: #606C38;">
                 <p class="fw-bold" style="color: #FEFAE0;">
                     Masukkan file .xlsx (<a
-                        href="{{ asset('Template Daftar Akun Web Logbook Dokter Magang.xlsx') }}">template</a>)
+                        href="{{ asset('Template Daftar Akun Web Logbook Magang.xlsx') }}">template</a>)
                 </p>
                 <form method="POST" action="{{ route('akun.import') }}" enctype="multipart/form-data" class="dropzone"
                     style="background-color: #FEFAE0;" id="file-upload-input">

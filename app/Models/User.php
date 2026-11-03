@@ -75,16 +75,23 @@ class User extends Authenticatable
         return $this->hasMany(RiwayatProfilMahasiswaMagang::class, 'mahasiswa_magang_id');
     }
 
-    public static function generateUniqueUsername(string $nama): string
+    public static function generateUniqueUsername(string $nama, ?int $exceptUserId = null): string
     {
         $nameParts = explode(' ', trim($nama));
         $firstName = $nameParts[0] ?? '';
         $lastName = count($nameParts) > 1 ? end($nameParts) : '';
         $baseUsername = strtolower($firstName.($lastName ? '.'.$lastName : ''));
 
-        $existing = static::where('username', $baseUsername)
-            ->orWhere('username', 'like', $baseUsername.'%')
-            ->pluck('username');
+        $existingQuery = static::where(function ($query) use ($baseUsername) {
+            $query->where('username', $baseUsername)
+                ->orWhere('username', 'like', $baseUsername.'%');
+        });
+
+        if ($exceptUserId !== null) {
+            $existingQuery->where('id', '!=', $exceptUserId);
+        }
+
+        $existing = $existingQuery->pluck('username');
 
         if ($existing->isEmpty()) {
             return $baseUsername;

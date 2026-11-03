@@ -57,6 +57,10 @@ class VerifikasiUbahDataController extends Controller
             return redirect()->route('ubah-data.queue')->withErrors(['status' => 'Data perubahan tidak ditemukan']);
         }
 
+        if ($dokterMagang->nama !== $dataBaru->nama) {
+            $dokterMagang->username = User::generateUniqueUsername($dataBaru->nama, $dokterMagang->id);
+        }
+
         $dokterMagang->nama = $dataBaru->nama;
         $dokterMagang->nik = $dataBaru->nik;
         $dokterMagang->nim = $dataBaru->nim;

@@ -8,7 +8,7 @@
             <img class="img-fluid" src="{{ asset('images/Lupa-password_image.png') }}" alt="">
             <p class="text-center">Diharapkan pembimbing lapangan dapat mengirimkan daftar username yang lupa password
                 kepada
-                Admin Web Logbook Dokter Magang Dinas Kesehatan Kota Surabaya</p>
+                Admin Web Logbook Magang Dinas Kesehatan Kota Surabaya</p>
         </div>
     </div>
 </x-base-layout>

@@ -27,7 +27,7 @@
                     <div class="col-xl-8">
                         <div class="card-body py-4">
                             <h4 class="card-title">Manajemen Logbook</h4>
-                            <p class="card-text">Pantau logbook dokter magang</p>
+                            <p class="card-text">Pantau logbook magang</p>
                         </div>
                     </div>
                 </div>

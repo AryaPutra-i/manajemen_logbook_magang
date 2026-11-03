@@ -1,4 +1,7 @@
 @php
+    $isPendingWithoutData = in_array($user->role, ['dokter_magang', 'mahasiswa_magang'], true)
+        && $user->is_profile_change_pending
+        && ! $dataBaru;
     $nama =
         $dataBaru && $dataBaru->nama !== $user->nama && $user->is_profile_change_pending
             ? $user->nama . ' -> ' . $dataBaru->nama
@@ -40,6 +43,16 @@
                 </ul>
             </div>
         @endif
+        @if ($isPendingWithoutData)
+            <div class="alert alert-danger">
+                Status akun masih pending, tetapi data pengajuannya tidak ditemukan. Periksa data di bawah, lalu
+                kirim ulang agar pembimbing dapat memverifikasinya.
+            </div>
+        @elseif ($user->is_profile_change_pending)
+            <div class="alert alert-warning">
+                Perubahan data masih menunggu verifikasi pembimbing lapangan.
+            </div>
+        @endif
 
         <form id="editAkun" method="POST" action="{{ route('akun.ubah-data.update', ['user' => $user->id]) }}"
             class="d-flex flex-column">
@@ -59,28 +72,40 @@
                     </div>
                 </div>
 
-                <div class="row align-items-center g-2 mb-3">
-                    <label class="col-lg-3 col-form-label mb-1 mb-lg-0" for="puskesmas">Puskesmas</label>
-                    <div class="col-lg-9">
-                        <div class="input-group">
-                            <input required disabled value="{{ $user->puskesmas?->nama }}" class="form-control"
-                                type="text" name="puskesmas" id="puskesmas" placeholder="Masukkan puskesmas">
+                @if (in_array($user->role, ['dokter_magang', 'pembimbing_lapangan'], true))
+                    <div class="row align-items-center g-2 mb-3">
+                        <label class="col-lg-3 col-form-label mb-1 mb-lg-0" for="puskesmas">Puskesmas</label>
+                        <div class="col-lg-9">
+                            <div class="input-group">
+                                <input required disabled value="{{ $user->puskesmas?->nama ?? '-' }}"
+                                    class="form-control" type="text" name="puskesmas" id="puskesmas">
+                            </div>
                         </div>
                     </div>
-                </div>
+                @elseif (in_array($user->role, ['mahasiswa_magang', 'pembimbing_lapangan_mahasiswa'], true))
+                    <div class="row align-items-center g-2 mb-3">
+                        <label class="col-lg-3 col-form-label mb-1 mb-lg-0" for="departemen">Departemen</label>
+                        <div class="col-lg-9">
+                            <div class="input-group">
+                                <input required disabled value="{{ $user->departemen?->nama ?? '-' }}"
+                                    class="form-control" type="text" name="departemen" id="departemen">
+                            </div>
+                        </div>
+                    </div>
+                @endif
 
                 <div class="row align-items-center g-2 mb-3">
                     <label class="col-lg-3 col-form-label mb-1 mb-lg-0" for="nama">Nama</label>
                     <div class="col-lg-9">
                         <div class="input-group">
-                            <input @if ($user->is_profile_change_pending) disabled @endif required
+                            <input @if ($user->is_profile_change_pending && !$isPendingWithoutData) disabled @endif required
                                 value="{{ $nama }}" class="form-control" type="text" name="nama"
                                 id="nama" placeholder="Masukkan nama">
                         </div>
                     </div>
                 </div>
 
-                @if ($user->role === 'pembimbing_lapangan')
+                @if (in_array($user->role, ['pembimbing_lapangan', 'pembimbing_lapangan_mahasiswa'], true))
                     <div class="row align-items-center g-2 mb-3">
                         <label class="col-lg-3 col-form-label mb-1 mb-lg-0" for="nip">NIP</label>
                         <div class="col-lg-9">
@@ -90,12 +115,12 @@
                             </div>
                         </div>
                     </div>
-                @elseif ($user->role === 'dokter_magang')
+                @elseif (in_array($user->role, ['dokter_magang', 'mahasiswa_magang'], true))
                     <div class="row align-items-center g-2 mb-3">
                         <label class="col-lg-3 col-form-label mb-1 mb-lg-0" for="nik">NIK</label>
                         <div class="col-lg-9">
                             <div class="input-group">
-                                <input @if ($user->is_profile_change_pending) disabled @endif required
+                                <input @if ($user->is_profile_change_pending && !$isPendingWithoutData) disabled @endif required
                                     value="{{ $nik }}" class="form-control" type="text" name="nik"
                                     id="nik" placeholder="Masukkan NIK">
                             </div>
@@ -106,7 +131,7 @@
                         <label class="col-lg-3 col-form-label mb-1 mb-lg-0" for="nim">NIM</label>
                         <div class="col-lg-9">
                             <div class="input-group">
-                                <input @if ($user->is_profile_change_pending) disabled @endif required
+                                <input @if ($user->is_profile_change_pending && !$isPendingWithoutData) disabled @endif required
                                     value="{{ $nim }}" class="form-control" type="text" name="nim"
                                     id="nim" placeholder="Masukkan NIM">
                             </div>
@@ -117,7 +142,7 @@
                         <label class="col-lg-3 col-form-label mb-1 mb-lg-0" for="alamat">Alamat</label>
                         <div class="col-lg-9">
                             <div class="input-group">
-                                <input @if ($user->is_profile_change_pending) disabled @endif required
+                                <input @if ($user->is_profile_change_pending && !$isPendingWithoutData) disabled @endif required
                                     value="{{ $alamat }}" class="form-control" type="text" name="alamat"
                                     id="alamat" placeholder="Masukkan alamat">
                             </div>
@@ -128,7 +153,7 @@
                         <label class="col-lg-3 col-form-label mb-1 mb-lg-0" for="universitas">Universitas</label>
                         <div class="col-lg-9">
                             <div class="input-group">
-                                <input @if ($user->is_profile_change_pending) disabled @endif required
+                                <input @if ($user->is_profile_change_pending && !$isPendingWithoutData) disabled @endif required
                                     value="{{ $universitas }}" class="form-control" type="text" name="universitas"
                                     id="universitas" placeholder="Masukkan universitas">
                             </div>
@@ -137,7 +162,7 @@
                 @endif
 
                 <div class="d-flex flex-column align-items-stretch align-items-lg-end">
-                    @if (!$user->is_profile_change_pending)
+                    @if (!$user->is_profile_change_pending || $isPendingWithoutData)
                         <button class='btn btn-primary mt-3' type="submit">Simpan Perubahan</button>
                     @else
                         <button class='btn btn-warning mt-3' disabled type="submit">Menunggu Verifikasi</button>

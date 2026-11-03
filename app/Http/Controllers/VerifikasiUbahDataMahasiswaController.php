@@ -13,16 +13,16 @@ class VerifikasiUbahDataMahasiswaController extends Controller
     public function index()
     {
         $user = request()->user();
-        $daftarPerubahanData = RiwayatProfilMahasiswaMagang::query()
-            ->with('mahasiswaMagang')
-            ->whereHas('mahasiswaMagang', function ($q) use ($user) {
-                $q->where(['departemen_id' => $user->departemen_id,
-                'is_profile_change_pending' => true]);
-            })
-            ->get();
-        $daftarMahasiswaMagang = User::where('departemen_id', $user->departemen_id)->get();
+        $daftarPerubahanData = $user->departemen_id
+            ? User::query()
+                ->with('departemen')
+                ->where('role', 'mahasiswa_magang')
+                ->where('departemen_id', $user->departemen_id)
+                ->where('is_profile_change_pending', true)
+                ->get()
+            : collect();
 
-        return view('manajemen-ubah-data-mahasiswa', compact('daftarPerubahanData', 'daftarMahasiswaMagang'));
+        return view('manajemen-ubah-data-mahasiswa', compact('daftarPerubahanData'));
     }
 
     private function scopedMahasiswaMagang(User $mahasiswaMagang): void
@@ -56,6 +56,10 @@ class VerifikasiUbahDataMahasiswaController extends Controller
 
         if (! $dataBaru) {
             return redirect()->route('ubah-data-mahasiswa.queue')->withErrors(['status' => 'Data perubahan tidak ditemukan']);
+        }
+
+        if ($mahasiswaMagang->nama !== $dataBaru->nama) {
+            $mahasiswaMagang->username = User::generateUniqueUsername($dataBaru->nama, $mahasiswaMagang->id);
         }
 
         $mahasiswaMagang->nama = $dataBaru->nama;

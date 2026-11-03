@@ -3,7 +3,7 @@
         class='d-flex flex-column flex-lg-row w-100 min-vh-100 justify-content-end justify-content-lg-center align-items-lg-center gap-lg-4 my-lg-auto'>
         <div class="p-2 col-lg-4 d-flex flex-column align-items-center">
             <h1 class="fs-1 fw-bold text-center">
-                Web Logbook <br> Dokter Magang
+                Web Logbook <br> Magang
             </h1>
 
             <p class="fw-bold text-center">

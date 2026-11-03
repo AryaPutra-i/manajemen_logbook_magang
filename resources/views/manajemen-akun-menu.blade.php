@@ -19,6 +19,25 @@
             </a>
         @endif
 
+        @if ($user->role === 'pembimbing_lapangan_mahasiswa')
+            <a class="col" href="{{ route('ubah-data-mahasiswa.queue') }}" style="text-decoration: none">
+                <div class="card w-100">
+                    <div class="row g-0">
+                        <div class="col-xl-4">
+                            <img src="{{ asset('images/Manajemen-Akun_Verifikasi-Ubah-Data.jpg') }}"
+                                class="card-img-top object-fit-cover" style="height: 200px;" alt="">
+                        </div>
+                        <div class="col-xl-8">
+                            <div class="card-body py-4">
+                                <h4 class="card-title">Manajemen Ubah Data Mahasiswa</h4>
+                                <p class="card-text">Manajemen permintaan ubah data mahasiswa magang</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        @endif
+
         <a class="col" href="{{ route('akun.ubah-data.edit') }}" style="text-decoration: none">
             <div class="card w-100">
                 <div class="row g-0">

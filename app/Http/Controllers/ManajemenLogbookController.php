@@ -65,3 +65,4 @@ class ManajemenLogbookController extends Controller
         return back()->with('status', 'Kategori pelayanan kesehatan berhasil dihapus');
     }
 }
+    

@@ -4,9 +4,29 @@
         class="px-3 py-4 d-flex align-items-center mb-3 mb-md-0 me-md-auto text-decoration-none">
         <img class="me-2" src="{{ asset('images/ehealth_bg-removed.png') }}" style="width: 32px; height: 32px;"
             alt="">
-        <span style="color: #FEFAE0;" class="fs-6 fw-bold">Web Logbook Dokter Magang</span>
+        <span style="color: #FEFAE0;" class="fs-6 fw-bold">Web Logbook Magang</span>
     </a>
     <hr>
+    @if (request()->user()->role === 'mahasiswa_magang')
+        @php
+            $navLinks = array_merge($navLinks, [
+                ['icon' => 'bi-person-circle', 'level' => 1, 'label' => 'Manajemen Akun', 'href' => route('akun.menu')],
+                ['icon' => 'bi-person-vcard', 'level' => 2, 'label' => 'Ubah Data', 'href' => route('akun.ubah-data.edit')],
+                ['icon' => 'bi-key', 'level' => 2, 'label' => 'Ganti Password', 'href' => route('akun.password.index')],
+                ['icon' => 'bi-book', 'level' => 1, 'label' => 'Manajemen Logbook', 'href' => route('logbook.index')],
+            ]);
+        @endphp
+    @elseif (request()->user()->role === 'pembimbing_lapangan_mahasiswa')
+        @php
+            $navLinks = array_merge($navLinks, [
+                ['icon' => 'bi-person-circle', 'level' => 1, 'label' => 'Manajemen Akun', 'href' => route('akun.menu')],
+                ['icon' => 'bi-person-lines-fill', 'level' => 2, 'label' => 'Manajemen Ubah Data Mahasiswa', 'href' => route('ubah-data-mahasiswa.queue')],
+                ['icon' => 'bi-person-vcard', 'level' => 2, 'label' => 'Ubah Data', 'href' => route('akun.ubah-data.edit')],
+                ['icon' => 'bi-key', 'level' => 2, 'label' => 'Ganti Password', 'href' => route('akun.password.index')],
+                ['icon' => 'bi-book', 'level' => 1, 'label' => 'Manajemen Logbook', 'href' => route('logbook.index')],
+            ]);
+        @endphp
+    @endif
     <ul class="nav nav-pills flex-column mb-auto">
         <li style="@if (request()->routeIs('home')) background-color: #FEFAE0; color: #283618; @endif"
             class="nav-item">

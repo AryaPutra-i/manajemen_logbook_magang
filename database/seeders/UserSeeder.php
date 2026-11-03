@@ -1,6 +1,7 @@
 <?php
 
 namespace Database\Seeders;
+
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -59,6 +60,18 @@ class UserSeeder extends Seeder
             'nim' => fake()->regexify('[0-9]{10}'),
             'alamat' => fake()->streetAddress(),
             'universitas' => fake()->company(),
+            'puskesmas_id' => null,
+
+        ]);
+        User::factory()->create([
+            'username' => 'pembimbing.lapangan.mahasiswa',
+            'password' => 'password123',
+            'role' => 'pembimbing_lapangan_mahasiswa',
+            'nip' => fake()->regexify('[0-9]{18}'),
+            'nik' => null,
+            'nim' => null,
+            'alamat' => null,
+            'universitas' => null,
             'puskesmas_id' => null,
 
         ]);

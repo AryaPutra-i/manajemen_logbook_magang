@@ -1,4 +1,4 @@
-<x-home-layout>
+    <x-home-layout>
     <section class="p-4 w-100 d-flex flex-column gap-3" style="max-width: 768px;">
         @if ($errors->any())
             <div class="alert alert-danger">
@@ -30,17 +30,20 @@
                     <label class="col-lg-3 col-form-label mb-1 my-lg-auto" for="role">Role</label>
                     <div class="col-lg-9">
                         <div class="mb-1 mb-lg-3 input-group">
-                            <select onchange="handleSelectRole()" class="form-select" name="role" id="role">
-                                <option selected disabled>Masukkan role</option>
-                                <option value="pembimbing_lapangan" @selected(old('role') == 'pembimbing_lapangan')>Pembimbing Lapangan
+                            <select onchange="handleSelectRole()" class="form-select" name="role" id="role" required>
+                                                <option value="" @selected(!old('role')) disabled>Masukkan role</option>
+                                                <option value="pembimbing_lapangan" @selected(old('role') == 'pembimbing_lapangan')>Pembimbing Lapangan Dokter
                                 </option>
                                 <option value="dokter_magang" @selected(old('role') == 'dokter_magang')>Dokter Magang</option>
-                            </select>
+                                                <option value="pembimbing_lapangan_mahasiswa" @selected(old('role') == 'pembimbing_lapangan_mahasiswa')>Pembimbing Lapangan Mahasiswa</option>
+                                                <option value="mahasiswa_magang" @selected(old('role') == 'mahasiswa_magang')>Mahasiswa Magang</option>
+                                            </select>
                         </div>
                     </div>
                 </div>
 
-                <div class="row align-items-center g-2 mb-3">
+                <div class="row align-items-center g-2 mb-3 {{ in_array(old('role'), ['dokter_magang', 'pembimbing_lapangan'], true) ? '' : 'd-none' }}"
+                    data-role-group="puskesmas">
                     <label class="col-lg-3 col-form-label mb-1 my-lg-auto" for="puskesmas">Puskesmas</label>
                     <div class="col-lg-9">
                         <input value="{{ old('namaPuskesmas') }}" class="mb-1 mb-lg-3 form-control"
@@ -49,6 +52,21 @@
                         <datalist id="namaPuskesmasDatalist">
                             @foreach ($daftarNamaPuskesmas as $namaPuskesmas)
                                 <option value="{{ $namaPuskesmas }}">
+                            @endforeach
+                        </datalist>
+                    </div>
+                </div>
+
+                <div class="row align-items-center g-2 mb-3 {{ in_array(old('role'), ['mahasiswa_magang', 'pembimbing_lapangan_mahasiswa'], true) ? '' : 'd-none' }}"
+                    data-role-group="departemen">
+                    <label class="col-lg-3 col-form-label mb-1 my-lg-auto" for="namaDepartemen">Departemen</label>
+                    <div class="col-lg-9">
+                        <input value="{{ old('namaDepartemen') }}" class="mb-1 mb-lg-3 form-control"
+                            list="namaDepartemenDatalist" type="text" name="namaDepartemen" id="namaDepartemen"
+                            placeholder="Pilih departemen">
+                        <datalist id="namaDepartemenDatalist">
+                            @foreach ($daftarNamaDepartemen as $namaDepartemen)
+                                <option value="{{ $namaDepartemen }}">
                             @endforeach
                         </datalist>
                     </div>
@@ -118,29 +136,30 @@
 
             function handleSelectRole() {
                 const selectedRole = document.querySelector('#role').value;
+                const isDoctor = selectedRole === 'dokter_magang';
+                const isDoctorSupervisor = selectedRole === 'pembimbing_lapangan';
+                const isStudent = selectedRole === 'mahasiswa_magang';
+                const isStudentSupervisor = selectedRole === 'pembimbing_lapangan_mahasiswa';
+                const isIntern = isDoctor || isStudent;
+                const isSupervisor = isDoctorSupervisor || isStudentSupervisor;
 
-                if (selectedRole === 'dokter_magang') {
-                    document.querySelector('#nip').disabled = true;
+                document.querySelector('[data-role-group="puskesmas"]').classList.toggle('d-none', !isDoctor && !isDoctorSupervisor);
+                document.querySelector('[data-role-group="departemen"]').classList.toggle('d-none', !isStudent && !isStudentSupervisor);
+                document.querySelector('#namaPuskesmas').disabled = !isDoctor && !isDoctorSupervisor;
+                document.querySelector('#namaDepartemen').disabled = !isStudent && !isStudentSupervisor;
+                document.querySelector('#nip').disabled = !isSupervisor;
+                document.querySelector('#nik').disabled = !isIntern;
+                document.querySelector('#nim').disabled = !isIntern;
+                document.querySelector('#alamat').disabled = !isIntern;
+                document.querySelector('#universitas').disabled = !isIntern;
 
-                    document.querySelector('#nik').disabled = false;
-                    document.querySelector('#nim').disabled = false;
-                    document.querySelector('#alamat').disabled = false;
-                    document.querySelector('#universitas').disabled = false;
-                } else if (selectedRole === 'pembimbing_lapangan') {
-                    document.querySelector('#nik').disabled = true;
-                    document.querySelector('#nim').disabled = true;
-                    document.querySelector('#alamat').disabled = true;
-                    document.querySelector('#universitas').disabled = true;
-
-                    document.querySelector('#nip').disabled = false;
-                } else {
-                    document.querySelector('#nik').disabled = true;
-                    document.querySelector('#nim').disabled = true;
-                    document.querySelector('#alamat').disabled = true;
-                    document.querySelector('#universitas').disabled = true;
-                    document.querySelector('#nip').disabled = true;
-                }
+                document.querySelector('#nip').required = isSupervisor;
+                document.querySelector('#nik').required = isIntern;
+                document.querySelector('#nim').required = isIntern;
+                document.querySelector('#alamat').required = isIntern;
+                document.querySelector('#universitas').required = isIntern;
             }
+
         </script>
     @endpush
 </x-home-layout>
