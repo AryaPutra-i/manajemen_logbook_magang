@@ -62,7 +62,7 @@ class User extends Authenticatable
 
     public function daftarLogMahasiswaYangDiverifikasi()
     {
-        return $this->hasMany(LogMahasiswaMagang::class, 'pembimbing_lapangan_mahasiswa_id');
+        return $this->hasMany(LogMahasiswaMagang::class, 'pembimbing_lapangan_id');
     }
 
     public function daftarPerubahanDataDokterMagang()

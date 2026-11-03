@@ -17,4 +17,9 @@ class Puskesmas extends Model
     {
         return $this->hasMany(LogDokterMagang::class, 'puskesmas_id');
     }
+
+    public function daftarLogMahasiswaMagang()
+    {
+        return $this->hasMany(LogMahasiswaMagang::class, 'puskesmas_id');
+    }
 }
