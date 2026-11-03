@@ -19,7 +19,7 @@ return new class extends Migration
         Schema::table('log_mahasiswa_magangs', function(Blueprint $table){
             $table->renameColumn('pembimbing_lapangan_mahasiswa_id', 'pembimbing_lapangan_id');
             $table->foreignId('pembimbing_lapangan_id')->nullable()->change();
-            $table->foreignId('puskesmas_id')->nullable()->contrained('puskesmas')->cascadeOnDelete()->after('pembimbing_lapangan_id');
+            $table->foreignId('puskesmas_id')->nullable()->constrained('puskesmas')->cascadeOnDelete()->after('pembimbing_lapangan_id');
         });
     }
 
