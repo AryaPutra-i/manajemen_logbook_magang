@@ -21,18 +21,23 @@ class ManajemenLogbookController extends Controller
 
         if ($user->role === 'admin') {
             $daftarLogDokterMagang = LogDokterMagang::with(['puskesmas', 'dokterMagang'])->get();
-            $daftarLogMahasiswaMagang = LogMahasiswaMagang::with(['departemen', 'mahasiswaMagang'])->get();
+            $daftarLogMahasiswaMagang = LogMahasiswaMagang::with(['puskesmas', 'departemen', 'mahasiswaMagang'])->get();
         } elseif ($user->role === 'dokter_magang') {
             $daftarLogDokterMagang = LogDokterMagang::with(['puskesmas', 'dokterMagang'])->where('dokter_magang_id', $user->id)->get();
         } elseif ($user->role === 'mahasiswa_magang') {
-            $daftarLogMahasiswaMagang = LogMahasiswaMagang::with(['departemen', 'mahasiswaMagang'])->where('mahasiswa_magang_id', $user->id)->get();
-        } elseif ($user->role === 'pembimbing_lapangan') {
+            $daftarLogMahasiswaMagang = LogMahasiswaMagang::with(['puskesmas', 'departemen', 'mahasiswaMagang'])->where('mahasiswa_magang_id', $user->id)->get();
+        } elseif ($user->role === 'pembimbing_lapangan_puskesmas') {
             $daftarLogDokterMagang = $user->puskesmas_id
                 ? LogDokterMagang::with(['puskesmas', 'dokterMagang'])->where('puskesmas_id', $user->puskesmas_id)->get()
                 : collect();
-        } elseif ($user->role === 'pembimbing_lapangan_mahasiswa') {
+            $daftarLogMahasiswaMagang = $user->puskesmas_id
+                ? LogMahasiswaMagang::with(['puskesmas', 'departemen', 'mahasiswaMagang'])
+                    ->where('puskesmas_id', $user->puskesmas_id)
+                    ->get()
+                : collect();
+        } elseif ($user->role === 'pembimbing_lapangan_departemen') {
             $daftarLogMahasiswaMagang = $user->departemen_id
-                ? LogMahasiswaMagang::with(['departemen', 'mahasiswaMagang'])->where('departemen_id', $user->departemen_id)->get()
+                ? LogMahasiswaMagang::with(['puskesmas', 'departemen', 'mahasiswaMagang'])->where('departemen_id', $user->departemen_id)->get()
                 : collect();
         }
 
@@ -65,4 +70,3 @@ class ManajemenLogbookController extends Controller
         return back()->with('status', 'Kategori pelayanan kesehatan berhasil dihapus');
     }
 }
-    

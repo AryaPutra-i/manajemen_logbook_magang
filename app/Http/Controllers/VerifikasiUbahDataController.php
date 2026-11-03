@@ -28,7 +28,7 @@ class VerifikasiUbahDataController extends Controller
     {
         $user = request()->user();
 
-        if ($user->role !== 'pembimbing_lapangan'
+        if ($user->role !== 'pembimbing_lapangan_puskesmas'
             || ! $user->puskesmas_id
             || $dokterMagang->role !== 'dokter_magang'
             || $dokterMagang->puskesmas_id !== $user->puskesmas_id

@@ -13,14 +13,25 @@ class VerifikasiUbahDataMahasiswaController extends Controller
     public function index()
     {
         $user = request()->user();
-        $daftarPerubahanData = $user->departemen_id
-            ? User::query()
-                ->with('departemen')
-                ->where('role', 'mahasiswa_magang')
-                ->where('departemen_id', $user->departemen_id)
-                ->where('is_profile_change_pending', true)
-                ->get()
-            : collect();
+        $daftarPerubahanData = match ($user->role) {
+            'pembimbing_lapangan_puskesmas' => $user->puskesmas_id
+                ? User::query()
+                    ->with('puskesmas')
+                    ->where('role', 'mahasiswa_magang')
+                    ->where('puskesmas_id', $user->puskesmas_id)
+                    ->where('is_profile_change_pending', true)
+                    ->get()
+                : collect(),
+            'pembimbing_lapangan_departemen' => $user->departemen_id
+                ? User::query()
+                    ->with('departemen')
+                    ->where('role', 'mahasiswa_magang')
+                    ->where('departemen_id', $user->departemen_id)
+                    ->where('is_profile_change_pending', true)
+                    ->get()
+                : collect(),
+            default => collect(),
+        };
 
         return view('manajemen-ubah-data-mahasiswa', compact('daftarPerubahanData'));
     }
@@ -29,10 +40,16 @@ class VerifikasiUbahDataMahasiswaController extends Controller
     {
         $user = request()->user();
 
-        if ($user->role !== 'pembimbing_lapangan_mahasiswa'
-        || ! $user->departemen_id
+        $authorized = match ($user->role) {
+            'pembimbing_lapangan_puskesmas' => $user->puskesmas_id
+                && $mahasiswaMagang->puskesmas_id === $user->puskesmas_id,
+            'pembimbing_lapangan_departemen' => $user->departemen_id
+                && $mahasiswaMagang->departemen_id === $user->departemen_id,
+            default => false,
+        };
+
+        if (! $authorized
         || $mahasiswaMagang->role !== 'mahasiswa_magang'
-        || $mahasiswaMagang->departemen_id !== $user->departemen_id
         || ! $mahasiswaMagang->is_profile_change_pending) {
             abort(403);
         }

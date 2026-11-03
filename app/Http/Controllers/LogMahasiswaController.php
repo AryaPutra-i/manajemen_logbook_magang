@@ -25,7 +25,11 @@ class LogMahasiswaController extends Controller
      */
     public function storeMahasiswa(LogMahasiswaMagangRequest $request)
     {
-        abort_if(! $request->user()->departemen_id, 422, 'Akun mahasiswa belum memiliki departemen.');
+        $user = request()->user();
+
+        if (($user->puskesmas_id === null && $user->departemen_id === null) || ($user->puskesmas_id !== null && $user->departemen_id !== null)) {
+            abort(422, 'Akun mahasiswa harus memiliki tepat satu unit penempatan.');
+        }
 
         $validated = $request->validated();
 
@@ -36,6 +40,7 @@ class LogMahasiswaController extends Controller
             'tanggal' => $validated['tanggal'],
             'deskripsi' => $validated['deskripsi'],
             'departemen_id' => $request->user()->departemen_id,
+            'puskesmas_id' => $request->user()->puskesmas_id,
             'mahasiswa_magang_id' => $request->user()->id,
             'dokumentasi' => $filePath,
         ]);
@@ -50,24 +55,36 @@ class LogMahasiswaController extends Controller
     {
         $user = request()->user();
 
-        if ($user->role === 'mahasiswa_magang' && $logMagang->mahasiswa_magang_id !== $user->id) {
-            abort(403);
-        }
-
-        if ($user->role === 'pembimbing_lapangan_mahasiswa' && $logMagang->departemen_id !== $user->departemen_id) {
-            abort(403);
+        if ($user->role === 'mahasiswa_magang') {
+            abort_unless($logMagang->mahasiswa_magang_id === $user->id, 403);
+        } elseif (in_array($user->role, ['pembimbing_lapangan_puskesmas', 'pembimbing_lapangan_departemen',], true)) {
+            $this->authorizePembimbing($logMagang, $user);
         }
 
         return view('edit-log-mahasiswa', ['logMahasiswa' => $logMagang, 'user' => $user]);
     }
 
+    private function authorizePembimbing(LogMahasiswaMagang $logMagang, User $user): void
+    {
+        $authorized = match ($user->role) {
+            'pembimbing_lapangan_puskesmas' => $user->puskesmas_id !== null && $logMagang->puskesmas_id !== null && $logMagang->departemen_id === null && $logMagang->puskesmas_id === $user->puskesmas_id,
+
+            'pembimbing_lapangan_departemen' => $user->departemen_id !== null && $logMagang->departemen_id !== null && $logMagang->puskesmas_id === null && $logMagang->departemen_id === $user->departemen_id,
+
+            default => false,
+        };
+
+        abort_unless($authorized, 403);
+    }
+
     public function verifikasiLogMahasiswa(LogMahasiswaMagang $logMagang)
     {
-        if ($logMagang->departemen_id !== request()->user()->departemen_id) {
-            abort(403);
-        }
+        $user = request()->user();
+
+        $this->authorizePembimbing($logMagang, $user);
 
         $logMagang->status_verifikasi = StatusLogMagang::Selesai;
+        $logMagang->pembimbing_lapangan_id = $user->id;
         $logMagang->save();
 
         return back()->with('status', 'Log dari '.$logMagang->mahasiswaMagang->username.' pada tanggal '.$logMagang->tanggal.' diverifikasi');
@@ -75,11 +92,12 @@ class LogMahasiswaController extends Controller
 
     public function mintaRevisiLogMahasiswa(LogMahasiswaMagang $logMagang)
     {
-        if ($logMagang->departemen_id !== request()->user()->departemen_id) {
-            abort(403);
-        }
+        $user = request()->user();
+
+        $this->authorizePembimbing($logMagang, $user);
 
         $logMagang->status_verifikasi = StatusLogMagang::Revisi;
+        $logMagang->pembimbing_lapangan_id = $user->id;
         $logMagang->save();
 
         return back()->with('status', 'Log dari '.$logMagang->mahasiswaMagang->username.' pada tanggal '.$logMagang->tanggal.' dimintai revisi');

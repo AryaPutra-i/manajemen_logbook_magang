@@ -60,7 +60,7 @@ class LogDokterController extends Controller
             abort(403);
         }
 
-        if ($user->role === 'pembimbing_lapangan' && $logMagang->puskesmas_id !== $user->puskesmas_id) {
+        if ($user->role === 'pembimbing_lapangan_puskesmas' && $logMagang->puskesmas_id !== $user->puskesmas_id) {
             abort(403);
         }
 

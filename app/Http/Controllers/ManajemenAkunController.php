@@ -107,10 +107,10 @@ class ManajemenAkunController extends Controller
 
         $username = User::generateUniqueUsername($validated['nama']);
 
-        $puskesmasId = in_array($validated['role'], ['dokter_magang', 'pembimbing_lapangan'], true)
+        $puskesmasId = in_array($validated['role'], ['dokter_magang', 'pembimbing_lapangan_puskesmas', 'mahasiswa_magang'], true)
             ? Puskesmas::where('nama', $validated['namaPuskesmas'] ?? null)->value('id')
             : null;
-        $departemenId = in_array($validated['role'], ['mahasiswa_magang', 'pembimbing_lapangan_mahasiswa'], true)
+        $departemenId = in_array($validated['role'], ['mahasiswa_magang', 'pembimbing_lapangan_departemen'], true)
             ? Departemen::where('nama', $validated['namaDepartemen'] ?? null)->value('id')
             : null;
 
@@ -124,17 +124,19 @@ class ManajemenAkunController extends Controller
         $validated = $request->validated();
         $role = $validated['role'] ?? $user->role;
 
-        $namaPuskesmas = $validated['namaPuskesmas']
-            ?? $user->puskesmas?->nama;
+        $namaPuskesmas = array_key_exists('namaPuskesmas', $validated)
+            ? $validated['namaPuskesmas']
+            : $user->puskesmas?->nama;
 
-        $namaDepartemen = $validated['namaDepartemen']
-            ?? $user->departemen?->nama;
+        $namaDepartemen = array_key_exists('namaDepartemen', $validated)
+            ? $validated['namaDepartemen']
+            : $user->departemen?->nama;
 
-        $puskesmasId = in_array($role, ['dokter_magang', 'pembimbing_lapangan'], true)
-            ? Puskesmas::where('nama', $namaPuskesmas ?? null)->value('id')
+        $puskesmasId = in_array($role, ['dokter_magang', 'pembimbing_lapangan_puskesmas', 'mahasiswa_magang'], true)
+            ? Puskesmas::where('nama', $namaPuskesmas)->value('id')
             : null;
-        $departemenId = in_array($role, ['mahasiswa_magang', 'pembimbing_lapangan_mahasiswa'], true)
-            ? Departemen::where('nama', $namaDepartemen ?? null)->value('id')
+        $departemenId = in_array($role, ['mahasiswa_magang', 'pembimbing_lapangan_departemen'], true)
+            ? Departemen::where('nama', $namaDepartemen)->value('id')
             : null;
 
         $updatedData = [...$validated, 'puskesmas_id' => $puskesmasId, 'departemen_id' => $departemenId];
