@@ -1,6 +1,6 @@
 <x-home-layout>
     <section class="p-4 w-100 row row-cols-lg-2 row-cols-1 g-3">
-        @if ($user->role === 'pembimbing_lapangan')
+        @if ($user->role === 'pembimbing_lapangan_puskesmas')
             <a class="col" href="{{ route('ubah-data.queue') }}" style="text-decoration: none">
                 <div class="card w-100">
                     <div class="row g-0">
@@ -19,7 +19,7 @@
             </a>
         @endif
 
-        @if ($user->role === 'pembimbing_lapangan_mahasiswa')
+        @if (in_array($user->role, ['pembimbing_lapangan_puskesmas', 'pembimbing_lapangan_departemen'], true))
             <a class="col" href="{{ route('ubah-data-mahasiswa.queue') }}" style="text-decoration: none">
                 <div class="card w-100">
                     <div class="row g-0">

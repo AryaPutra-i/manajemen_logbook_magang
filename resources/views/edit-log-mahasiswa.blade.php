@@ -17,10 +17,18 @@
         <i class="bi bi-journal-text my-4 align-self-center" style="font-size: 96px;"></i>
 
         <div class="row align-items-center g-2 mb-3">
-            <label class="col-lg-3 col-form-label" for="departemen">Departemen</label>
+            <label class="col-lg-3 col-form-label" for="unitMagang">Unit magang</label>
             <div class="col-lg-9">
-                <input class="form-control" id="departemen" value="{{ $logMahasiswa->departemen?->nama ?? '-' }}"
+                <input class="form-control" id="unitMagang"
+                    value="{{ $logMahasiswa->puskesmas?->nama ?? $logMahasiswa->departemen?->nama ?? '-' }}"
                     disabled>
+            </div>
+        </div>
+        <div class="row align-items-center g-2 mb-3">
+            <label class="col-lg-3 col-form-label" for="pembimbing">Pembimbing</label>
+            <div class="col-lg-9">
+                <input class="form-control" id="pembimbing"
+                    value="{{ $logMahasiswa->pembimbingLapangan?->username ?? '-' }}" disabled>
             </div>
         </div>
         <div class="row align-items-center g-2 mb-3">
@@ -35,6 +43,10 @@
             @php($isLogSelesai = $logMahasiswa->status_verifikasi === 'selesai')
             @if ($isLogSelesai)
                 <div class="alert alert-warning">Log yang sudah selesai tidak dapat diubah atau dihapus.</div>
+            @elseif ($logMahasiswa->status_verifikasi === 'revisi')
+                <div class="alert alert-danger">
+                    Log ini perlu diperbaiki sesuai revisi pembimbing. Simpan perubahan untuk mengirim ulang logbook.
+                </div>
             @endif
 
             <form method="POST" action="{{ route('logbook.mahasiswa.update', ['id' => $logMahasiswa->id]) }}"
@@ -83,7 +95,10 @@
 
                 <div class="d-flex justify-content-lg-end gap-2">
                     <a href="{{ route('logbook.index') }}" class="btn btn-secondary">Kembali</a>
-                    <button class="btn btn-primary" type="submit" @disabled($isLogSelesai)>Simpan perubahan</button>
+                    <button class="btn {{ $logMahasiswa->status_verifikasi === 'revisi' ? 'btn-danger' : 'btn-primary' }}"
+                        type="submit" @disabled($isLogSelesai)>
+                        {{ $logMahasiswa->status_verifikasi === 'revisi' ? 'Kirim ulang setelah revisi' : 'Simpan perubahan' }}
+                    </button>
                 </div>
             </form>
 
