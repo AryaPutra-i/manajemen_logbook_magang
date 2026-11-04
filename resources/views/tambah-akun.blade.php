@@ -32,17 +32,29 @@
                         <div class="mb-1 mb-lg-3 input-group">
                             <select onchange="handleSelectRole()" class="form-select" name="role" id="role" required>
                                                 <option value="" @selected(!old('role')) disabled>Masukkan role</option>
-                                                <option value="pembimbing_lapangan" @selected(old('role') == 'pembimbing_lapangan')>Pembimbing Lapangan Dokter
+                                                <option value="pembimbing_lapangan_puskesmas" @selected(old('role') == 'pembimbing_lapangan_puskesmas')>Pembimbing Lapangan Puskesmas
                                 </option>
                                 <option value="dokter_magang" @selected(old('role') == 'dokter_magang')>Dokter Magang</option>
-                                                <option value="pembimbing_lapangan_mahasiswa" @selected(old('role') == 'pembimbing_lapangan_mahasiswa')>Pembimbing Lapangan Mahasiswa</option>
+                                                <option value="pembimbing_lapangan_departemen" @selected(old('role') == 'pembimbing_lapangan_departemen')>Pembimbing Lapangan Departemen</option>
                                                 <option value="mahasiswa_magang" @selected(old('role') == 'mahasiswa_magang')>Mahasiswa Magang</option>
                                             </select>
                         </div>
                     </div>
                 </div>
 
-                <div class="row align-items-center g-2 mb-3 {{ in_array(old('role'), ['dokter_magang', 'pembimbing_lapangan'], true) ? '' : 'd-none' }}"
+                <div class="row align-items-center g-2 mb-3 {{ old('role') === 'mahasiswa_magang' ? '' : 'd-none' }}"
+                    data-role-group="jenis-penempatan">
+                    <label class="col-lg-3 col-form-label mb-1 my-lg-auto" for="jenisPenempatan">Penempatan mahasiswa</label>
+                    <div class="col-lg-9">
+                        <select class="mb-1 mb-lg-3 form-select" name="jenisPenempatan" id="jenisPenempatan">
+                            <option value="" disabled @selected(!old('jenisPenempatan'))>Pilih penempatan</option>
+                            <option value="puskesmas" @selected(old('jenisPenempatan') === 'puskesmas')>Puskesmas</option>
+                            <option value="departemen" @selected(old('jenisPenempatan') === 'departemen')>Departemen</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row align-items-center g-2 mb-3 {{ in_array(old('role'), ['dokter_magang', 'pembimbing_lapangan_puskesmas'], true) ? '' : 'd-none' }}"
                     data-role-group="puskesmas">
                     <label class="col-lg-3 col-form-label mb-1 my-lg-auto" for="puskesmas">Puskesmas</label>
                     <div class="col-lg-9">
@@ -57,7 +69,7 @@
                     </div>
                 </div>
 
-                <div class="row align-items-center g-2 mb-3 {{ in_array(old('role'), ['mahasiswa_magang', 'pembimbing_lapangan_mahasiswa'], true) ? '' : 'd-none' }}"
+                <div class="row align-items-center g-2 mb-3 {{ in_array(old('role'), ['mahasiswa_magang', 'pembimbing_lapangan_departemen'], true) ? '' : 'd-none' }}"
                     data-role-group="departemen">
                     <label class="col-lg-3 col-form-label mb-1 my-lg-auto" for="namaDepartemen">Departemen</label>
                     <div class="col-lg-9">
@@ -73,8 +85,7 @@
                 </div>
 
                 <div class="row align-items-center g-2 mb-3">
-                    <label class="col-lg-3 col-form-label mb-1 my-lg-auto" for="nip">NIP (khusus pembimbing
-                        lapangan)</label>
+                    <label class="col-lg-3 col-form-label mb-1 my-lg-auto" for="nip">NIP (khusus pembimbing lapangan)</label>
                     <div class="col-lg-9">
                         <div class="mb-1 mb-lg-3 input-group">
                             <input value="{{ old('nip') }}" class="form-control" disabled type="text"
@@ -136,17 +147,36 @@
 
             function handleSelectRole() {
                 const selectedRole = document.querySelector('#role').value;
-                const isDoctor = selectedRole === 'dokter_magang';
-                const isDoctorSupervisor = selectedRole === 'pembimbing_lapangan';
-                const isStudent = selectedRole === 'mahasiswa_magang';
-                const isStudentSupervisor = selectedRole === 'pembimbing_lapangan_mahasiswa';
-                const isIntern = isDoctor || isStudent;
-                const isSupervisor = isDoctorSupervisor || isStudentSupervisor;
 
-                document.querySelector('[data-role-group="puskesmas"]').classList.toggle('d-none', !isDoctor && !isDoctorSupervisor);
-                document.querySelector('[data-role-group="departemen"]').classList.toggle('d-none', !isStudent && !isStudentSupervisor);
-                document.querySelector('#namaPuskesmas').disabled = !isDoctor && !isDoctorSupervisor;
-                document.querySelector('#namaDepartemen').disabled = !isStudent && !isStudentSupervisor;
+                const isDoctor = selectedRole === 'dokter_magang';
+                const isPuskesmasSupervisor = selectedRole === 'pembimbing_lapangan_puskesmas';
+                const isStudent = selectedRole === 'mahasiswa_magang';
+                const isDepartmentSupervisor = selectedRole === 'pembimbing_lapangan_departemen';
+
+                const isIntern = isDoctor || isStudent;
+                const isSupervisor = isPuskesmasSupervisor || isDepartmentSupervisor;
+                const placement = document.querySelector('#jenisPenempatan');
+                const isStudentAtPuskesmas = isStudent && placement.value === 'puskesmas';
+                const isStudentAtDepartment = isStudent && placement.value === 'departemen';
+                const puskesmasInput = document.querySelector('#namaPuskesmas');
+                const departmentInput = document.querySelector('#namaDepartemen');
+
+                document.querySelector('[data-role-group="jenis-penempatan"]').classList.toggle('d-none', !isStudent);
+                placement.disabled = !isStudent;
+                placement.required = isStudent;
+
+                document.querySelector('[data-role-group="puskesmas"]').classList.toggle(
+                    'd-none',
+                    !isDoctor && !isPuskesmasSupervisor && !isStudentAtPuskesmas
+                );
+                document.querySelector('[data-role-group="departemen"]').classList.toggle(
+                    'd-none',
+                    !isDepartmentSupervisor && !isStudentAtDepartment
+                );
+
+                puskesmasInput.disabled = !isDoctor && !isPuskesmasSupervisor && !isStudent;
+                departmentInput.disabled = !isDepartmentSupervisor && !isStudent;
+
                 document.querySelector('#nip').disabled = !isSupervisor;
                 document.querySelector('#nik').disabled = !isIntern;
                 document.querySelector('#nim').disabled = !isIntern;
@@ -158,8 +188,21 @@
                 document.querySelector('#nim').required = isIntern;
                 document.querySelector('#alamat').required = isIntern;
                 document.querySelector('#universitas').required = isIntern;
+
+                puskesmasInput.required = isDoctor || isPuskesmasSupervisor || isStudentAtPuskesmas;
+                departmentInput.required = isDepartmentSupervisor || isStudentAtDepartment;
             }
 
+            document.querySelector('#jenisPenempatan').addEventListener('change', function () {
+                if (this.value === 'puskesmas') {
+                    document.querySelector('#namaDepartemen').value = '';
+                } else if (this.value === 'departemen') {
+                    document.querySelector('#namaPuskesmas').value = '';
+                }
+
+                handleSelectRole();
+            });
+
         </script>
-    @endpush
+        @endpush
 </x-home-layout>

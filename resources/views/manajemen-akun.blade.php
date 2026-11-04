@@ -85,7 +85,16 @@
                                 <td>{{ $user->created_at->isoFormat('YYYY-MM-DD') }}</td>
                                 <td>{{ $user->username }}</td>
                                 <td>{{ $user->nama }}</td>
-                                <td>{{ $user->role }}</td>
+                                <td>
+                                    {{ match ($user->role) {
+                                        'admin' => 'Admin',
+                                        'dokter_magang' => 'Dokter Magang',
+                                        'mahasiswa_magang' => 'Mahasiswa Magang',
+                                        'pembimbing_lapangan_puskesmas' => 'Pembimbing Lapangan Puskesmas',
+                                        'pembimbing_lapangan_departemen' => 'Pembimbing Lapangan Departemen',
+                                        default => $user->role,
+                                    } }}
+                                </td>
                                 <td>
                                     <form class="d-inline"
                                         action="{{ route('akun.reset-password', ['user' => $user->id]) }}"
