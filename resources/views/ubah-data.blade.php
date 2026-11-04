@@ -72,7 +72,7 @@
                     </div>
                 </div>
 
-                @if (in_array($user->role, ['dokter_magang', 'pembimbing_lapangan'], true))
+                @if (in_array($user->role, ['dokter_magang', 'pembimbing_lapangan_puskesmas'], true))
                     <div class="row align-items-center g-2 mb-3">
                         <label class="col-lg-3 col-form-label mb-1 mb-lg-0" for="puskesmas">Puskesmas</label>
                         <div class="col-lg-9">
@@ -82,13 +82,24 @@
                             </div>
                         </div>
                     </div>
-                @elseif (in_array($user->role, ['mahasiswa_magang', 'pembimbing_lapangan_mahasiswa'], true))
+                @elseif ($user->role === 'mahasiswa_magang')
+                    <div class="row align-items-center g-2 mb-3">
+                        <label class="col-lg-3 col-form-label mb-1 mb-lg-0" for="lokasiMagang">Lokasi magang</label>
+                        <div class="col-lg-9">
+                            <div class="input-group">
+                                <input required disabled value="{{ $user->puskesmas?->nama ?? $user->departemen?->nama ?? '-' }}"
+                                    class="form-control" type="text" name="lokasiMagang" id="lokasiMagang">
+                            </div>
+                        </div>
+                    </div>
+                @elseif ($user->role === 'pembimbing_lapangan_departemen')
                     <div class="row align-items-center g-2 mb-3">
                         <label class="col-lg-3 col-form-label mb-1 mb-lg-0" for="departemen">Departemen</label>
                         <div class="col-lg-9">
                             <div class="input-group">
                                 <input required disabled value="{{ $user->departemen?->nama ?? '-' }}"
                                     class="form-control" type="text" name="departemen" id="departemen">
+                                    class_implements ($user-> implements    )
                             </div>
                         </div>
                     </div>
@@ -105,7 +116,7 @@
                     </div>
                 </div>
 
-                @if (in_array($user->role, ['pembimbing_lapangan', 'pembimbing_lapangan_mahasiswa'], true))
+                @if (in_array($user->role, ['pembimbing_lapangan_puskesmas', 'pembimbing_lapangan_departemen'], true))
                     <div class="row align-items-center g-2 mb-3">
                         <label class="col-lg-3 col-form-label mb-1 mb-lg-0" for="nip">NIP</label>
                         <div class="col-lg-9">
