@@ -16,9 +16,12 @@ return new class extends Migration
             $table->date('tanggal');
             $table->text('nama_kegiatan');
             $table->text('deskripsi');
+            $table->string('dokumentasi')->nullable();
             $table->enum('status_verifikasi', array_column(StatusLogMagang::cases(), 'value'))->default(StatusLogMagang::Pending->value);
             $table->foreignId('mahasiswa_magang_id')->constrained('users')->cascadeOnDelete();
             $table->foreignId('pembimbing_lapangan_id')->nullable()->constrained('users')->cascadeOnDelete();
+            $table->foreignId('departemen_id')->nullable()->constrained('departemens')->cascadeOnDelete();
+            $table->foreignId('unit_kerja_id')->nullable()->constrained('unit_kerjas')->cascadeOnDelete();
             $table->timestamps();
         });
     }

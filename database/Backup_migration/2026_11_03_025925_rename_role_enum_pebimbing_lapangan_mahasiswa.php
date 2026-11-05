@@ -59,7 +59,7 @@ return new class extends Migration
             'mahasiswa_magang',
             'pembimbing_lapangan_mahasiswa',
         ]);
-    }
+    }   
 
     private function updateRoleConstraint(array $roles): void
     {

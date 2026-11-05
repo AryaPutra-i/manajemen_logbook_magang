@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('riwayat_profil_mahasiswa_magangs', function (Blueprint $table) {
             $table->id();
             $table->string('nama');
-            $table->integer('nik')->unique();
-            $table->integer('nim');
+            $table->string('nik')->unique();
+            $table->string('nim');
             $table->string('alamat');
             $table->string('universitas');
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
