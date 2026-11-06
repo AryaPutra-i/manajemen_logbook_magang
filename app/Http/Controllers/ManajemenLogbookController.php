@@ -20,24 +20,20 @@ class ManajemenLogbookController extends Controller
         $daftarLogMahasiswaMagang = collect();
 
         if ($user->role === 'admin') {
-            $daftarLogDokterMagang = LogDokterMagang::with(['puskesmas', 'dokterMagang'])->get();
-            $daftarLogMahasiswaMagang = LogMahasiswaMagang::with(['puskesmas', 'departemen', 'mahasiswaMagang'])->get();
+            $daftarLogDokterMagang = LogDokterMagang::with(['unitKerja', 'departemen', 'dokterMagang'])->get();
+            $daftarLogMahasiswaMagang = LogMahasiswaMagang::with(['unitKerja', 'departemen', 'mahasiswaMagang'])->get();
         } elseif ($user->role === 'dokter_magang') {
-            $daftarLogDokterMagang = LogDokterMagang::with(['puskesmas', 'dokterMagang'])->where('dokter_magang_id', $user->id)->get();
+            $daftarLogDokterMagang = LogDokterMagang::with(['unitKerja', 'departemen', 'dokterMagang'])->where('dokter_magang_id', $user->id)->get();
         } elseif ($user->role === 'mahasiswa_magang') {
-            $daftarLogMahasiswaMagang = LogMahasiswaMagang::with(['puskesmas', 'departemen', 'mahasiswaMagang'])->where('mahasiswa_magang_id', $user->id)->get();
-        } elseif ($user->role === 'pembimbing_lapangan_puskesmas') {
-            $daftarLogDokterMagang = $user->puskesmas_id
-                ? LogDokterMagang::with(['puskesmas', 'dokterMagang'])->where('puskesmas_id', $user->puskesmas_id)->get()
+            $daftarLogMahasiswaMagang = LogMahasiswaMagang::with(['unitKerja', 'departemen', 'mahasiswaMagang'])->where('mahasiswa_magang_id', $user->id)->get();
+        } elseif ($user->role === 'pembimbing_lapangan') {
+            $daftarLogDokterMagang = $user->unit_kerja_id
+                ? LogDokterMagang::with(['unitKerja', 'departemen', 'dokterMagang'])->where('unit_kerja_id', $user->unit_kerja_id)->get()
                 : collect();
-            $daftarLogMahasiswaMagang = $user->puskesmas_id
-                ? LogMahasiswaMagang::with(['puskesmas', 'departemen', 'mahasiswaMagang'])
-                    ->where('puskesmas_id', $user->puskesmas_id)
+            $daftarLogMahasiswaMagang = $user->unit_kerja_id
+                ? LogMahasiswaMagang::with(['unitKerja', 'departemen', 'mahasiswaMagang'])
+                    ->where('unit_kerja_id', $user->unit_kerja_id)
                     ->get()
-                : collect();
-        } elseif ($user->role === 'pembimbing_lapangan_departemen') {
-            $daftarLogMahasiswaMagang = $user->departemen_id
-                ? LogMahasiswaMagang::with(['puskesmas', 'departemen', 'mahasiswaMagang'])->where('departemen_id', $user->departemen_id)->get()
                 : collect();
         }
 

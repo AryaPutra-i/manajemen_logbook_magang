@@ -7,9 +7,9 @@ use App\Http\Requests\UbahDataRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Imports\UsersImport;
 use App\Models\Departemen;
-use App\Models\Puskesmas;
 use App\Models\RiwayatProfilDokterMagang;
 use App\Models\RiwayatProfilMahasiswaMagang;
+use App\Models\UnitKerja;
 use App\Models\User;
 use DB;
 use Hash;
@@ -32,7 +32,7 @@ class ManajemenAkunController extends Controller
 
     public function create()
     {
-        $daftarNamaPuskesmas = Puskesmas::select('nama')->pluck('nama')->toArray();
+        $daftarNamaPuskesmas = UnitKerja::select('nama')->pluck('nama')->toArray();
         $daftarNamaDepartemen = Departemen::select('nama')->pluck('nama')->toArray();
 
         return view('tambah-akun', compact('daftarNamaPuskesmas', 'daftarNamaDepartemen'));
@@ -107,14 +107,14 @@ class ManajemenAkunController extends Controller
 
         $username = User::generateUniqueUsername($validated['nama']);
 
-        $puskesmasId = in_array($validated['role'], ['dokter_magang', 'pembimbing_lapangan_puskesmas', 'mahasiswa_magang'], true)
-            ? Puskesmas::where('nama', $validated['namaPuskesmas'] ?? null)->value('id')
+        $unitKerjaId = in_array($validated['role'], ['dokter_magang', 'pembimbing_lapangan', 'mahasiswa_magang'], true)
+            ? UnitKerja::where('nama', $validated['namaUnitKerja'] ?? null)->value('id')
             : null;
-        $departemenId = in_array($validated['role'], ['mahasiswa_magang', 'pembimbing_lapangan_departemen'], true)
+        $departemenId = in_array($validated['role'], ['dokter_magang', 'pembimbing_lapangan', 'mahasiswa_magang'], true)
             ? Departemen::where('nama', $validated['namaDepartemen'] ?? null)->value('id')
             : null;
 
-        User::create([...$validated, 'username' => $username, 'password' => Hash::make('password123'), 'puskesmas_id' => $puskesmasId, 'departemen_id' => $departemenId]);
+        User::create([...$validated, 'username' => $username, 'password' => Hash::make('password123'), 'unit_kerja_id' => $unitKerjaId, 'departemen_id' => $departemenId]);
 
         return redirect()->route('akun.menu')->with('status', 'Akun berhasil ditambah');
     }
@@ -124,22 +124,22 @@ class ManajemenAkunController extends Controller
         $validated = $request->validated();
         $role = $validated['role'] ?? $user->role;
 
-        $namaPuskesmas = array_key_exists('namaPuskesmas', $validated)
-            ? $validated['namaPuskesmas']
-            : $user->puskesmas?->nama;
+        $namaUnitKerja = array_key_exists('namaUnitKerja', $validated)
+            ? $validated['namaUnitKerja']
+            : $user->unitKerja?->nama;
 
         $namaDepartemen = array_key_exists('namaDepartemen', $validated)
             ? $validated['namaDepartemen']
             : $user->departemen?->nama;
 
-        $puskesmasId = in_array($role, ['dokter_magang', 'pembimbing_lapangan_puskesmas', 'mahasiswa_magang'], true)
-            ? Puskesmas::where('nama', $namaPuskesmas)->value('id')
+        $unitKerjaId = in_array($role, ['dokter_magang', 'pembimbing_lapangan', 'mahasiswa_magang'], true)
+            ? UnitKerja::where('nama', $namaUnitKerja)->value('id')
             : null;
-        $departemenId = in_array($role, ['mahasiswa_magang', 'pembimbing_lapangan_departemen'], true)
+        $departemenId = in_array($role, ['dokter_magang', 'pembimbing_lapangan', 'mahasiswa_magang'], true)
             ? Departemen::where('nama', $namaDepartemen)->value('id')
             : null;
 
-        $updatedData = [...$validated, 'puskesmas_id' => $puskesmasId, 'departemen_id' => $departemenId];
+        $updatedData = [...$validated, 'unit_kerja_id' => $unitKerjaId, 'departemen_id' => $departemenId];
 
         if ($user->nama !== $validated['nama']) {
             $updatedData['username'] = User::generateUniqueUsername($validated['nama'], $user->id);
@@ -166,7 +166,7 @@ class ManajemenAkunController extends Controller
 
     public function edit(User $user)
     {
-        $daftarNamaPuskesmas = Puskesmas::select('nama')->pluck('nama')->toArray();
+        $daftarNamaPuskesmas = UnitKerja::select('nama')->pluck('nama')->toArray();
         $daftarNamaDepartemen = Departemen::select('nama')->pluck('nama')->toArray();
 
         return view('edit-akun', compact('user', 'daftarNamaPuskesmas', 'daftarNamaDepartemen'));

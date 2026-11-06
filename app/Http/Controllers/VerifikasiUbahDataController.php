@@ -16,10 +16,16 @@ class VerifikasiUbahDataController extends Controller
         $daftarPerubahanData = RiwayatProfilDokterMagang::query()
             ->with('dokterMagang')
             ->whereHas('dokterMagang', function ($q) use ($user) {
-                $q->where(['puskesmas_id' => $user->puskesmas_id, 'is_profile_change_pending' => true]);
+                $q->where([
+                    'unit_kerja_id' => $user->unit_kerja_id,
+                    'departemen_id' => $user->departemen_id,
+                    'is_profile_change_pending' => true,
+                ]);
             })
             ->get();
-        $daftarDokterMagang = User::where('puskesmas_id', $user->puskesmas_id)->get();
+        $daftarDokterMagang = User::where('unit_kerja_id', $user->unit_kerja_id)
+            ->where('departemen_id', $user->departemen_id)
+            ->get();
 
         return view('manajemen-ubah-data', compact('daftarPerubahanData', 'daftarDokterMagang'));
     }
@@ -28,10 +34,12 @@ class VerifikasiUbahDataController extends Controller
     {
         $user = request()->user();
 
-        if ($user->role !== 'pembimbing_lapangan_puskesmas'
-            || ! $user->puskesmas_id
+        if ($user->role !== 'pembimbing_lapangan'
+            || ! $user->unit_kerja_id
+            || ! $user->departemen_id
             || $dokterMagang->role !== 'dokter_magang'
-            || $dokterMagang->puskesmas_id !== $user->puskesmas_id
+            || $dokterMagang->unit_kerja_id !== $user->unit_kerja_id
+            || $dokterMagang->departemen_id !== $user->departemen_id
             || ! $dokterMagang->is_profile_change_pending) {
             abort(403);
         }

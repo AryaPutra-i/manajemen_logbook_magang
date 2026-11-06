@@ -27,8 +27,8 @@ class LogMahasiswaController extends Controller
     {
         $user = request()->user();
 
-        if (($user->puskesmas_id === null && $user->departemen_id === null) || ($user->puskesmas_id !== null && $user->departemen_id !== null)) {
-            abort(422, 'Akun mahasiswa harus memiliki tepat satu unit penempatan.');
+        if ($user->unit_kerja_id === null || $user->departemen_id === null) {
+            abort(422, 'Akun mahasiswa harus memiliki unit kerja dan departemen.');
         }
 
         $validated = $request->validated();
@@ -40,7 +40,7 @@ class LogMahasiswaController extends Controller
             'tanggal' => $validated['tanggal'],
             'deskripsi' => $validated['deskripsi'],
             'departemen_id' => $request->user()->departemen_id,
-            'puskesmas_id' => $request->user()->puskesmas_id,
+            'unit_kerja_id' => $request->user()->unit_kerja_id,
             'mahasiswa_magang_id' => $request->user()->id,
             'dokumentasi' => $filePath,
         ]);
@@ -57,8 +57,12 @@ class LogMahasiswaController extends Controller
 
         if ($user->role === 'mahasiswa_magang') {
             abort_unless($logMagang->mahasiswa_magang_id === $user->id, 403);
-        } elseif (in_array($user->role, ['pembimbing_lapangan_puskesmas', 'pembimbing_lapangan_departemen',], true)) {
-            $this->authorizePembimbing($logMagang, $user);
+        } elseif ($user->role === 'pembimbing_lapangan') {
+            abort_unless(
+                $logMagang->unit_kerja_id !== null &&
+                $logMagang->unit_kerja_id === $user->unit_kerja_id,
+                403
+            );
         }
 
         return view('edit-log-mahasiswa', ['logMahasiswa' => $logMagang, 'user' => $user]);
@@ -66,13 +70,11 @@ class LogMahasiswaController extends Controller
 
     private function authorizePembimbing(LogMahasiswaMagang $logMagang, User $user): void
     {
-        $authorized = match ($user->role) {
-            'pembimbing_lapangan_puskesmas' => $user->puskesmas_id !== null && $logMagang->puskesmas_id !== null && $logMagang->departemen_id === null && $logMagang->puskesmas_id === $user->puskesmas_id,
-
-            'pembimbing_lapangan_departemen' => $user->departemen_id !== null && $logMagang->departemen_id !== null && $logMagang->puskesmas_id === null && $logMagang->departemen_id === $user->departemen_id,
-
-            default => false,
-        };
+        $authorized = $user->role === 'pembimbing_lapangan'
+            && $user->unit_kerja_id !== null
+            && $user->departemen_id !== null
+            && $logMagang->unit_kerja_id === $user->unit_kerja_id
+            && $logMagang->departemen_id === $user->departemen_id;
 
         abort_unless($authorized, 403);
     }

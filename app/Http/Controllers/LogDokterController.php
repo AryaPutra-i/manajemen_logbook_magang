@@ -41,7 +41,8 @@ class LogDokterController extends Controller
             'tanggal' => $validated['tanggal'],
             'deskripsi' => $validated['deskripsi'],
             'hambatan' => $validated['hambatan'],
-            'puskesmas_id' => $request->user()->puskesmas_id,
+            'unit_kerja_id' => $request->user()->unit_kerja_id,
+            'departemen_id' => $request->user()->departemen_id,
             'dokter_magang_id' => $request->user()->id,
             'dokumentasi' => $filePath,
         ]);
@@ -60,7 +61,7 @@ class LogDokterController extends Controller
             abort(403);
         }
 
-        if ($user->role === 'pembimbing_lapangan_puskesmas' && $logMagang->puskesmas_id !== $user->puskesmas_id) {
+        if ($user->role === 'pembimbing_lapangan' && $logMagang->unit_kerja_id !== $user->unit_kerja_id) {
             abort(403);
         }
 
@@ -73,11 +74,17 @@ class LogDokterController extends Controller
 
     public function verifikasiLog(LogDokterMagang $logMagang)
     {
-        if ($logMagang->puskesmas_id !== request()->user()->puskesmas_id) {
+        $user = request()->user();
+
+        if (
+            $logMagang->unit_kerja_id !== $user->unit_kerja_id ||
+            $logMagang->departemen_id !== $user->departemen_id
+        ) {
             abort(403);
         }
 
         $logMagang->status_verifikasi = StatusLogMagang::Selesai;
+        $logMagang->pembimbing_lapangan_id = $user->id;
         $logMagang->save();
 
         return back()->with('status', 'Log dari '.$logMagang->dokterMagang->username.' pada tanggal '.$logMagang->tanggal.' diverifikasi');
@@ -85,11 +92,17 @@ class LogDokterController extends Controller
 
     public function mintaRevisiLog(LogDokterMagang $logMagang)
     {
-        if ($logMagang->puskesmas_id !== request()->user()->puskesmas_id) {
+        $user = request()->user();
+
+        if (
+            $logMagang->unit_kerja_id !== $user->unit_kerja_id ||
+            $logMagang->departemen_id !== $user->departemen_id
+        ) {
             abort(403);
         }
 
         $logMagang->status_verifikasi = StatusLogMagang::Revisi;
+        $logMagang->pembimbing_lapangan_id = $user->id;
         $logMagang->save();
 
         return back()->with('status', 'Log dari '.$logMagang->dokterMagang->username.' pada tanggal '.$logMagang->tanggal.' dimintai revisi');

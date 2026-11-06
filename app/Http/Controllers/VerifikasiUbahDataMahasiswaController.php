@@ -13,25 +13,14 @@ class VerifikasiUbahDataMahasiswaController extends Controller
     public function index()
     {
         $user = request()->user();
-        $daftarPerubahanData = match ($user->role) {
-            'pembimbing_lapangan_puskesmas' => $user->puskesmas_id
-                ? User::query()
-                    ->with('puskesmas')
-                    ->where('role', 'mahasiswa_magang')
-                    ->where('puskesmas_id', $user->puskesmas_id)
-                    ->where('is_profile_change_pending', true)
-                    ->get()
-                : collect(),
-            'pembimbing_lapangan_departemen' => $user->departemen_id
-                ? User::query()
-                    ->with('departemen')
-                    ->where('role', 'mahasiswa_magang')
-                    ->where('departemen_id', $user->departemen_id)
-                    ->where('is_profile_change_pending', true)
-                    ->get()
-                : collect(),
-            default => collect(),
-        };
+        $daftarPerubahanData = $user->role === 'pembimbing_lapangan' && $user->unit_kerja_id
+            ? User::query()
+                ->with(['unitKerja', 'departemen'])
+                ->where('role', 'mahasiswa_magang')
+                ->where('unit_kerja_id', $user->unit_kerja_id)
+                ->where('is_profile_change_pending', true)
+                ->get()
+            : collect();
 
         return view('manajemen-ubah-data-mahasiswa', compact('daftarPerubahanData'));
     }
@@ -40,13 +29,11 @@ class VerifikasiUbahDataMahasiswaController extends Controller
     {
         $user = request()->user();
 
-        $authorized = match ($user->role) {
-            'pembimbing_lapangan_puskesmas' => $user->puskesmas_id
-                && $mahasiswaMagang->puskesmas_id === $user->puskesmas_id,
-            'pembimbing_lapangan_departemen' => $user->departemen_id
-                && $mahasiswaMagang->departemen_id === $user->departemen_id,
-            default => false,
-        };
+        $authorized = $user->role === 'pembimbing_lapangan'
+            && $user->unit_kerja_id
+            && $user->departemen_id
+            && $mahasiswaMagang->unit_kerja_id === $user->unit_kerja_id
+            && $mahasiswaMagang->departemen_id === $user->departemen_id;
 
         if (! $authorized
         || $mahasiswaMagang->role !== 'mahasiswa_magang'
