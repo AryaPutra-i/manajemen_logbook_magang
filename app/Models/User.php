@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['username', 'password', 'role', 'nama', 'nip', 'nik', 'nim', 'alamat', 'universitas', 'is_profile_change_pending', 'puskesmas_id', 'departemen_id'])]
+#[Fillable(['username', 'password', 'role', 'nama', 'nip', 'nik', 'nim', 'alamat', 'universitas', 'is_profile_change_pending', 'unit_kerja_id', 'departemen_id'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -35,9 +35,9 @@ class User extends Authenticatable
         ];
     }
 
-    public function puskesmas()
+    public function unitKerja()
     {
-        return $this->belongsTo(Puskesmas::class, 'puskesmas_id');
+        return $this->belongsTo(UnitKerja::class, 'unit_kerja_id');
     }
 
     public function departemen()

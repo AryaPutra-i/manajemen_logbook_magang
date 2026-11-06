@@ -3,10 +3,11 @@
 namespace App\Imports;
 
 use App\Models\Departemen;
-use App\Models\Puskesmas;
+use App\Models\UnitKerja;
 use App\Models\User;
 use Hash;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Validation\Rule;
 use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
@@ -18,15 +19,10 @@ class UsersImport implements SkipsEmptyRows, ToModel, WithHeadingRow, WithValida
     {
         $role = $row['role'];
 
-        $puskesmasId = in_array($role, ['dokter_magang', 'pembimbing_lapangan_puskesmas'], true)
-            || ($role === 'mahasiswa_magang' && ! empty($row['puskesmas']))
-            ? Puskesmas::where('nama', $row['puskesmas'] ?? null)->value('id')
-            : null;
-
-        $departemenId = in_array($role, ['pembimbing_lapangan_departemen'], true)
-            || ($role === 'mahasiswa_magang' && ! empty($row['departemen']))
-            ? Departemen::where('nama', $row['departemen'] ?? null)->value('id')
-            : null;
+        $unitKerjaId = UnitKerja::where('nama', $row['unit_kerja'])->value('id');
+        $departemenId = Departemen::where('nama', $row['departemen'])
+            ->where('unit_kerja_id', $unitKerjaId)
+            ->value('id');
 
         $isMagang = in_array($role, ['dokter_magang', 'mahasiswa_magang'], true);
 
@@ -35,7 +31,7 @@ class UsersImport implements SkipsEmptyRows, ToModel, WithHeadingRow, WithValida
             'password' => Hash::make('password123'),
             'nama' => $row['nama_lengkap'],
             'role' => $role,
-            'puskesmas_id' => $puskesmasId,
+            'unit_kerja_id' => $unitKerjaId,
             'departemen_id' => $departemenId,
             'nip' => $isMagang ? null : ($row['nip_pembimbing_lapangan'] ?? null),
             'nik' => $isMagang ? ($row['nik_magang'] ?? null) : null,
@@ -49,15 +45,32 @@ class UsersImport implements SkipsEmptyRows, ToModel, WithHeadingRow, WithValida
     {
         return [
             'nama_lengkap' => ['required', 'string', 'max:255'],
-            'role' => ['required', 'in:dokter_magang,pembimbing_lapangan_puskesmas,mahasiswa_magang,pembimbing_lapangan_departemen'],
-            'puskesmas' => ['nullable', 'required_if:role,dokter_magang,pembimbing_lapangan_puskesmas', 'string', 'exists:puskesmas,nama'],
-            'departemen' => ['nullable', 'required_if:role,pembimbing_lapangan_departemen', 'string', 'exists:departemens,nama'],
-            'nip_pembimbing_lapangan' => ['nullable', 'required_if:role,pembimbing_lapangan_puskesmas,pembimbing_lapangan_departemen', 'string', 'size:18', 'unique:users,nip'],
+            'role' => ['required', 'in:dokter_magang,pembimbing_lapangan,mahasiswa_magang'],
+            'unit_kerja' => ['required', 'string', Rule::exists('unit_kerjas', 'nama')],
+            'departemen' => ['required', 'string', Rule::exists('departemens', 'nama')],
+            'nip_pembimbing_lapangan' => ['nullable', 'required_if:role,pembimbing_lapangan', 'string', 'size:18', 'unique:users,nip'],
             'nik_magang' => ['nullable', 'required_if:role,dokter_magang,mahasiswa_magang', 'string', 'size:16', 'unique:users,nik'],
             'nim_magang' => ['nullable', 'required_if:role,dokter_magang,mahasiswa_magang', 'string', 'max:255', 'unique:users,nim'],
             'alamat_magang' => ['nullable', 'required_if:role,dokter_magang,mahasiswa_magang', 'string', 'max:255'],
             'universitas_magang' => ['nullable', 'required_if:role,dokter_magang,mahasiswa_magang', 'string', 'max:255'],
         ];
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator): void {
+            $data = $validator->getData();
+            $unitKerjaId = UnitKerja::where('nama', $data['unit_kerja'] ?? null)->value('id');
+
+            if (
+                $unitKerjaId === null ||
+                ! Departemen::where('nama', $data['departemen'] ?? null)
+                    ->where('unit_kerja_id', $unitKerjaId)
+                    ->exists()
+            ) {
+                $validator->errors()->add('departemen', 'Departemen tidak terdaftar pada unit kerja yang dipilih');
+            }
+        });
     }
 
     public function customValidationMessages(): array
@@ -66,10 +79,10 @@ class UsersImport implements SkipsEmptyRows, ToModel, WithHeadingRow, WithValida
             'nama_lengkap.required' => 'Nama lengkap wajib diisi',
             'role.required' => 'Role wajib diisi',
             'role.in' => 'Role tidak valid',
-            'puskesmas.required_if' => 'Puskesmas wajib diisi untuk dokter magang atau pembimbing lapangan puskesmas',
-            'puskesmas.exists' => 'Puskesmas tidak terdaftar',
-            'departemen.required_if' => 'Departemen wajib diisi untuk pembimbing lapangan departemen',
-            'departemen.exists' => 'Departemen tidak terdaftar',
+            'unit_kerja.required' => 'Unit kerja wajib diisi',
+            'unit_kerja.exists' => 'Unit kerja tidak terdaftar',
+            'departemen.required' => 'Departemen wajib diisi',
+            'departemen.exists' => 'Departemen tidak terdaftar pada unit kerja yang dipilih',
             'nip_pembimbing_lapangan.string' => 'NIP harus berupa teks, bukan angka (ubah format sel menjadi Teks di Excel)',
             'nip_pembimbing_lapangan.size' => 'NIP harus 18 digit',
             'nip_pembimbing_lapangan.unique' => 'NIP sudah terdaftar',

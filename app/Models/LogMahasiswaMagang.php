@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-#[Fillable('nama_kegiatan', 'tanggal', 'deskripsi', 'mahasiswa_magang_id', 'pembimbing_lapangan_id', 'departemen_id', 'puskesmas_id', 'dokumentasi', 'status_verifikasi')]
+#[Fillable('nama_kegiatan', 'tanggal', 'deskripsi', 'mahasiswa_magang_id', 'pembimbing_lapangan_id', 'departemen_id', 'unit_kerja_id', 'dokumentasi', 'status_verifikasi')]
 class LogMahasiswaMagang extends Model
 {
     /** @use HasFactory<LogMahasiswaMagangFactory> */
@@ -17,9 +17,9 @@ class LogMahasiswaMagang extends Model
         'tanggal' => 'date',
     ];
 
-    public function puskesmas()
+    public function unitKerja()
     {
-        return $this->belongsTo(Puskesmas::class, 'puskesmas_id');
+        return $this->belongsTo(UnitKerja::class, 'unit_kerja_id');
     }
 
     public function departemen()
@@ -27,7 +27,8 @@ class LogMahasiswaMagang extends Model
         return $this->belongsTo(Departemen::class, 'departemen_id');
     }
 
-    public function mahasiswaMagang() {
+    public function mahasiswaMagang()
+    {
         return $this->belongsTo(User::class, 'mahasiswa_magang_id');
     }
 
