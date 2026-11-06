@@ -25,7 +25,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/manajemen-logbook', [ManajemenLogbookController::class, 'index'])->name('logbook.index');
 
-    Route::middleware(['role:admin,dokter_magang,pembimbing_lapangan_puskesmas,pembimbing_lapangan_departemen,mahasiswa_magang'])->group(function () {
+    Route::middleware(['role:admin,dokter_magang,pembimbing_lapangan,mahasiswa_magang'])->group(function () {
         Route::get('/manajemen-akun', [ManajemenAkunController::class, 'menu'])->name('akun.menu');
     });
 
@@ -48,7 +48,7 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/manajemen-logbook/kategori-pelayanan-kesehatan/{kategoriPelayananKesehatan}', [ManajemenLogbookController::class, 'destroyKategori'])->name('logbook.kategori.destroy');
     });
 
-    Route::middleware(['role:dokter_magang,mahasiswa_magang,pembimbing_lapangan_puskesmas,pembimbing_lapangan_departemen'])->group(function () {
+    Route::middleware(['role:dokter_magang,mahasiswa_magang,pembimbing_lapangan'])->group(function () {
         Route::get('/manajemen-akun/ubah-data', [ManajemenAkunController::class, 'editData'])->name('akun.ubah-data.edit');
         Route::put('/manajemen-akun/{user}/ubah-data', [ManajemenAkunController::class, 'updateData'])->name('akun.ubah-data.update');
 
@@ -61,7 +61,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/manajemen-logbook/tambah-log', [LogDokterController::class, 'create'])->name('logbook.create');
     });
 
-    Route::middleware(['role:admin,dokter_magang,pembimbing_lapangan_puskesmas'])->group(function () {
+    Route::middleware(['role:admin,dokter_magang,pembimbing_lapangan'])->group(function () {
         Route::get('/manajemen-logbook/{logMagang}/detail-log', [LogDokterController::class, 'edit'])->name('logbook.detail');
     });
     Route::middleware(['role:dokter_magang'])->get('/manajemen-logbook/{logMagang}/edit-log', [LogDokterController::class, 'edit'])->name('logbook.edit');
@@ -73,14 +73,14 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/manajemen-logbook-mahasiswa/tambah-log', [LogMahasiswaController::class, 'createMahasiswa'])->name('logbook.mahasiswa.create');
     });
 
-    Route::middleware(['role:admin,mahasiswa_magang,pembimbing_lapangan_puskesmas,pembimbing_lapangan_departemen'])->group(function () {
+    Route::middleware(['role:admin,mahasiswa_magang,pembimbing_lapangan'])->group(function () {
         Route::get('/manajemen-logbook-mahasiswa/{logMagang}/detail-log', [LogMahasiswaController::class, 'editMahasiswa'])->name('logbook.mahasiswa.detail');
     });
     Route::middleware(['role:mahasiswa_magang'])->get('/manajemen-logbook-mahasiswa/{logMagang}/edit-log', [LogMahasiswaController::class, 'editMahasiswa'])->name('logbook.mahasiswa.edit');
     Route::middleware(['role:mahasiswa_magang'])->put('/manajemen-logbook-mahasiswa/{id}', [LogMahasiswaController::class, 'updateMahasiswa'])->name('logbook.mahasiswa.update');
     Route::middleware(['role:admin,mahasiswa_magang'])->delete('/manajemen-logbook-mahasiswa/{id}', [LogMahasiswaController::class, 'destroyMahasiswa'])->name('logbook.mahasiswa.destroy');
 
-    Route::middleware(['role:pembimbing_lapangan_puskesmas'])->group(function () {
+    Route::middleware(['role:pembimbing_lapangan'])->group(function () {
         Route::get('/manajemen-akun/manajemen-ubah-data', [VerifikasiUbahDataController::class, 'index'])->name('ubah-data.queue');
         Route::get('/manajemen-akun/manajemen-ubah-data/{dokterMagang}/verifikasi-ubah-data', [VerifikasiUbahDataController::class, 'show'])->name('ubah-data.show');
         Route::patch('/manajemen-akun/manajemen-ubah-data/{dokterMagang}/verifikasi-ubah-data', [VerifikasiUbahDataController::class, 'verify'])->name('ubah-data.verify');
@@ -90,12 +90,12 @@ Route::middleware(['auth'])->group(function () {
         Route::patch('/manajemen-logbook/{logMagang}/minta-revisi-log', [LogDokterController::class, 'mintaRevisiLog'])->name('logbook.revise');
     });
 
-    Route::middleware(['role:pembimbing_lapangan_puskesmas,pembimbing_lapangan_departemen'])->group(function () {
+    Route::middleware(['role:pembimbing_lapangan'])->group(function () {
         Route::patch('/manajemen-logbook-mahasiswa/{logMagang}/verifikasi-log', [LogMahasiswaController::class, 'verifikasiLogMahasiswa'])->name('logbook.mahasiswa.verify');
         Route::patch('/manajemen-logbook-mahasiswa/{logMagang}/minta-revisi-log', [LogMahasiswaController::class, 'mintaRevisiLogMahasiswa'])->name('logbook.mahasiswa.revise');
     });
 
-    Route::middleware(['role:pembimbing_lapangan_puskesmas,pembimbing_lapangan_departemen'])->group(function () {
+    Route::middleware(['role:pembimbing_lapangan'])->group(function () {
         Route::get('/manajemen-akun/manajemen-ubah-data-mahasiswa', [VerifikasiUbahDataMahasiswaController::class, 'index'])->name('ubah-data-mahasiswa.queue');
         Route::get('/manajemen-akun/manajemen-ubah-data-mahasiswa/{mahasiswaMagang}/verifikasi-ubah-data', [VerifikasiUbahDataMahasiswaController::class, 'show'])->name('ubah-data-mahasiswa.show');
         Route::patch('/manajemen-akun/manajemen-ubah-data-mahasiswa/{mahasiswaMagang}/verifikasi-ubah-data', [VerifikasiUbahDataMahasiswaController::class, 'verify'])->name('ubah-data-mahasiswa.verify');
