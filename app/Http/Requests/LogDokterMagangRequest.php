@@ -25,7 +25,12 @@ class LogDokterMagangRequest extends FormRequest
     {
         $rules = [
             'kategoriPelayananKesehatan' => ['required', 'array', 'min:1'],
-            'kategoriPelayananKesehatan.*' => ['required', 'string', 'distinct'],
+            'kategoriPelayananKesehatan.*' => [
+                'required',
+                'string',
+                'distinct',
+                Rule::exists('kategori_pelayanan_kesehatans', 'nama'),
+            ],
             'jumlahPasien' => ['required', 'array', 'min:1'],
             'jumlahPasien.*' => ['required', 'integer', 'min:1'],
             'tanggal' => ['required', 'date', Rule::date()->afterOrEqual(today()->subDays(6)), 'before_or_equal:today'],
@@ -62,7 +67,7 @@ class LogDokterMagangRequest extends FormRequest
             'jumlahPasien.required' => 'Jumlah pasien wajib diisi.',
             'jumlahPasien.array' => 'Jumlah pasien harus berupa array.',
             'jumlahPasien.*.required' => 'Setiap jumlah pasien wajib diisi.',
-            'jumlahPasien.*.numeric' => 'Setiap jumlah pasien harus berupa angka.',
+            'jumlahPasien.*.integer' => 'Setiap jumlah pasien harus berupa angka bulat.',
 
             'tanggal.required' => 'Tanggal wajib diisi.',
             'tanggal.date' => 'Tanggal harus berupa tanggal yang valid.',

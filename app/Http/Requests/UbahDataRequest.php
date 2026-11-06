@@ -34,7 +34,7 @@ class UbahDataRequest extends FormRequest
             $rules['nim'] = ['nullable', 'string', 'max:255', Rule::unique('users')->ignore($user->id)];
             $rules['alamat'] = ['nullable', 'string', 'max:255'];
             $rules['universitas'] = ['nullable', 'string', 'max:255'];
-        } elseif (in_array($user->role, ['pembimbing_lapangan_puskesmas', 'pembimbing_lapangan_departemen'], true)) {
+        } elseif ($user->role === 'pembimbing_lapangan') {
             $rules['nip'] = ['nullable', 'string', 'size:18', Rule::unique('users')->ignore($user->id)];
         }
 
