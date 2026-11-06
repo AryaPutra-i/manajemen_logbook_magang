@@ -28,6 +28,14 @@ class LogDokterController extends Controller
      */
     public function store(LogDokterMagangRequest $request)
     {
+        $user = $request->user();
+
+        abort_unless(
+            $user->unit_kerja_id !== null && $user->departemen_id !== null,
+            422,
+            'Akun dokter harus memiliki unit kerja dan departemen.'
+        );
+
         $validated = $request->validated();
         $jsonData = [];
         foreach ($validated['kategoriPelayananKesehatan'] as $index => $kategori) {
@@ -41,9 +49,9 @@ class LogDokterController extends Controller
             'tanggal' => $validated['tanggal'],
             'deskripsi' => $validated['deskripsi'],
             'hambatan' => $validated['hambatan'],
-            'unit_kerja_id' => $request->user()->unit_kerja_id,
-            'departemen_id' => $request->user()->departemen_id,
-            'dokter_magang_id' => $request->user()->id,
+            'unit_kerja_id' => $user->unit_kerja_id,
+            'departemen_id' => $user->departemen_id,
+            'dokter_magang_id' => $user->id,
             'dokumentasi' => $filePath,
         ]);
 
@@ -61,7 +69,14 @@ class LogDokterController extends Controller
             abort(403);
         }
 
-        if ($user->role === 'pembimbing_lapangan' && $logMagang->unit_kerja_id !== $user->unit_kerja_id) {
+        if (
+            $user->role === 'pembimbing_lapangan'
+            && (
+                $user->unit_kerja_id === null
+                || $logMagang->unit_kerja_id === null
+                || $logMagang->unit_kerja_id !== $user->unit_kerja_id
+            )
+        ) {
             abort(403);
         }
 
@@ -77,8 +92,13 @@ class LogDokterController extends Controller
         $user = request()->user();
 
         if (
-            $logMagang->unit_kerja_id !== $user->unit_kerja_id ||
-            $logMagang->departemen_id !== $user->departemen_id
+            $user->role !== 'pembimbing_lapangan'
+            || $user->unit_kerja_id === null
+            || $user->departemen_id === null
+            || $logMagang->unit_kerja_id === null
+            || $logMagang->departemen_id === null
+            || $logMagang->unit_kerja_id !== $user->unit_kerja_id
+            || $logMagang->departemen_id !== $user->departemen_id
         ) {
             abort(403);
         }
@@ -95,8 +115,13 @@ class LogDokterController extends Controller
         $user = request()->user();
 
         if (
-            $logMagang->unit_kerja_id !== $user->unit_kerja_id ||
-            $logMagang->departemen_id !== $user->departemen_id
+            $user->role !== 'pembimbing_lapangan'
+            || $user->unit_kerja_id === null
+            || $user->departemen_id === null
+            || $logMagang->unit_kerja_id === null
+            || $logMagang->departemen_id === null
+            || $logMagang->unit_kerja_id !== $user->unit_kerja_id
+            || $logMagang->departemen_id !== $user->departemen_id
         ) {
             abort(403);
         }

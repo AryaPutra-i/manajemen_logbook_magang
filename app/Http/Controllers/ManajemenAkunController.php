@@ -32,10 +32,10 @@ class ManajemenAkunController extends Controller
 
     public function create()
     {
-        $daftarNamaPuskesmas = UnitKerja::select('nama')->pluck('nama')->toArray();
+        $daftarNamaUnitKerja = UnitKerja::select('nama')->pluck('nama')->toArray();
         $daftarNamaDepartemen = Departemen::select('nama')->pluck('nama')->toArray();
 
-        return view('tambah-akun', compact('daftarNamaPuskesmas', 'daftarNamaDepartemen'));
+        return view('tambah-akun', compact('daftarNamaUnitKerja', 'daftarNamaDepartemen'));
     }
 
     public function editData()
@@ -166,10 +166,10 @@ class ManajemenAkunController extends Controller
 
     public function edit(User $user)
     {
-        $daftarNamaPuskesmas = UnitKerja::select('nama')->pluck('nama')->toArray();
+        $daftarNamaUnitKerja = UnitKerja::select('nama')->pluck('nama')->toArray();
         $daftarNamaDepartemen = Departemen::select('nama')->pluck('nama')->toArray();
 
-        return view('edit-akun', compact('user', 'daftarNamaPuskesmas', 'daftarNamaDepartemen'));
+        return view('edit-akun', compact('user', 'daftarNamaUnitKerja', 'daftarNamaDepartemen'));
     }
 
     public function import(Request $request)

@@ -18,6 +18,7 @@ class VerifikasiUbahDataMahasiswaController extends Controller
                 ->with(['unitKerja', 'departemen'])
                 ->where('role', 'mahasiswa_magang')
                 ->where('unit_kerja_id', $user->unit_kerja_id)
+                ->where('departemen_id', $user->departemen_id)
                 ->where('is_profile_change_pending', true)
                 ->get()
             : collect();

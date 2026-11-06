@@ -70,6 +70,20 @@ class UsersImport implements SkipsEmptyRows, ToModel, WithHeadingRow, WithValida
             ) {
                 $validator->errors()->add('departemen', 'Departemen tidak terdaftar pada unit kerja yang dipilih');
             }
+
+            foreach ([
+                'nip_pembimbing_lapangan' => 'nip',
+                'nik_magang' => 'nik',
+                'nim_magang' => 'nim',
+            ] as $input => $column) {
+                $value = $data[$input] ?? null;
+
+                if ($value !== null && User::whereNotNull($column)->get([$column])->contains(
+                    fn (User $user): bool => $user->{$column} === $value
+                )) {
+                    $validator->errors()->add($input, ucfirst($column).' sudah terdaftar');
+                }
+            }
         });
     }
 
