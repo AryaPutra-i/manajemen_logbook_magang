@@ -15,7 +15,7 @@ class UserSeeder extends Seeder
         // User::factory(9)->create();
 
         User::factory()->create([
-            'username' => 'admin_dkk',
+            'username' => 'admin_dkk_2',
             'password' => 'password123',
             'role' => 'admin',
             'nip' => null,
@@ -23,11 +23,12 @@ class UserSeeder extends Seeder
             'nim' => null,
             'alamat' => null,
             'universitas' => null,
-            'puskesmas_id' => null,
+            'unit_kerja_id' => null,
+            'departemen_id' => null,
         ]);
 
         User::factory()->create([
-            'username' => 'dokter.magang',
+            'username' => 'dokter.magang_2',
             'password' => 'password123',
             'role' => 'dokter_magang',
             'nip' => null,
@@ -35,12 +36,13 @@ class UserSeeder extends Seeder
             'nim' => fake()->regexify('[0-9]{10}'),
             'alamat' => fake()->streetAddress(),
             'universitas' => fake()->company(),
-            'puskesmas_id' => 1,
+            'unit_kerja_id' => 1,
+            'departemen_id' => null,
 
         ]);
 
         User::factory()->create([
-            'username' => 'pembimbing.lapangan',
+            'username' => 'pembimbing.lapangan_2',
             'password' => 'password123',
             'role' => 'pembimbing_lapangan',
             'nip' => fake()->regexify('[0-9]{18}'),
@@ -48,11 +50,12 @@ class UserSeeder extends Seeder
             'nim' => null,
             'alamat' => null,
             'universitas' => null,
-            'puskesmas_id' => 1,
+            'unit_kerja_id' => 1,
+            'departemen_id' => null,
         ]);
 
         User::factory()->create([
-            'username' => 'mahasiswa.magang',
+            'username' => 'mahasiswa.magang_2',
             'password' => 'password123',
             'role' => 'mahasiswa_magang',
             'nip' => null,
@@ -60,19 +63,21 @@ class UserSeeder extends Seeder
             'nim' => fake()->regexify('[0-9]{10}'),
             'alamat' => fake()->streetAddress(),
             'universitas' => fake()->company(),
-            'puskesmas_id' => null,
+            'unit_kerja_id' => null,
+            'departemen_id' => 1,
 
         ]);
         User::factory()->create([
-            'username' => 'pembimbing.lapangan.mahasiswa',
+            'username' => 'pembimbing.lapangan.com',
             'password' => 'password123',
-            'role' => 'pembimbing_lapangan_mahasiswa',
+            'role' => 'pembimbing_lapangan',
             'nip' => fake()->regexify('[0-9]{18}'),
             'nik' => null,
             'nim' => null,
             'alamat' => null,
             'universitas' => null,
-            'puskesmas_id' => null,
+            'unit_kerja_id' => null,
+            'departemen_id' => 1,
 
         ]);
     }

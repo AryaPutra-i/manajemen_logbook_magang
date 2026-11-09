@@ -2,7 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Models\Puskesmas;
+use App\Models\UnitKerja;
+use App\Models\Departemen;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -38,7 +39,8 @@ class UserFactory extends Factory
             'nim' => $role === 'dokter_magang' ? fake()->regexify('[0-9]{10}') : null,
             'alamat' => $role === 'dokter_magang' ? fake()->streetAddress() : null,
             'universitas' => $role === 'dokter_magang' ? fake()->company() : null,
-            'puskesmas_id' => fake()->randomElement(Puskesmas::select('id')->pluck('id')->toArray()),
+            'unit_kerja_id' => fake()->randomElement(UnitKerja::select('id')->pluck('id')->toArray()),
+            'departemen_id' => fake()->randomElement(Departemen::select('id')->pluck('id')->toArray()),
             'remember_token' => Str::random(10),
         ];
     }
