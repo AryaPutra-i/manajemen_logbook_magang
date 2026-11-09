@@ -15,7 +15,7 @@ return new class extends Migration
         Schema::rename('puskesmas', 'unit_kerjas');
 
         Schema::table('unit_kerjas', function (Blueprint $table) {
-            $table->enum('jenis', ['Dinas_Kesehatan', 'Puskesmas'])->default('Dinas_Kesehatan')->after('nama');
+            $table->enum('jenis', ['Dinas_Kesehatan', 'Puskesmas'])->default('Puskesmas')->after('nama');
         });
     }
 
