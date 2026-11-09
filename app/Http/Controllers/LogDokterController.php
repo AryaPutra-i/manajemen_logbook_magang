@@ -30,11 +30,7 @@ class LogDokterController extends Controller
     {
         $user = $request->user();
 
-        abort_unless(
-            $user->unit_kerja_id !== null && $user->departemen_id !== null,
-            422,
-            'Akun dokter harus memiliki unit kerja dan departemen.'
-        );
+        abort_unless($user->unit_kerja_id !== null, 422, 'Akun dokter harus memiliki unit kerja.');
 
         $validated = $request->validated();
         $jsonData = [];
@@ -94,11 +90,8 @@ class LogDokterController extends Controller
         if (
             $user->role !== 'pembimbing_lapangan'
             || $user->unit_kerja_id === null
-            || $user->departemen_id === null
             || $logMagang->unit_kerja_id === null
-            || $logMagang->departemen_id === null
             || $logMagang->unit_kerja_id !== $user->unit_kerja_id
-            || $logMagang->departemen_id !== $user->departemen_id
         ) {
             abort(403);
         }
@@ -117,11 +110,8 @@ class LogDokterController extends Controller
         if (
             $user->role !== 'pembimbing_lapangan'
             || $user->unit_kerja_id === null
-            || $user->departemen_id === null
             || $logMagang->unit_kerja_id === null
-            || $logMagang->departemen_id === null
             || $logMagang->unit_kerja_id !== $user->unit_kerja_id
-            || $logMagang->departemen_id !== $user->departemen_id
         ) {
             abort(403);
         }

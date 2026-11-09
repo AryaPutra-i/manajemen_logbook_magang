@@ -13,19 +13,20 @@ class VerifikasiUbahDataController extends Controller
     public function index()
     {
         $user = request()->user();
-        $daftarPerubahanData = RiwayatProfilDokterMagang::query()
-            ->with('dokterMagang')
-            ->whereHas('dokterMagang', function ($q) use ($user) {
-                $q->where([
-                    'unit_kerja_id' => $user->unit_kerja_id,
-                    'departemen_id' => $user->departemen_id,
-                    'is_profile_change_pending' => true,
-                ]);
-            })
-            ->get();
-        $daftarDokterMagang = User::where('unit_kerja_id', $user->unit_kerja_id)
-            ->where('departemen_id', $user->departemen_id)
-            ->get();
+        $daftarPerubahanData = $user->unit_kerja_id !== null
+            ? RiwayatProfilDokterMagang::query()
+                ->with('dokterMagang')
+                ->whereHas('dokterMagang', function ($query) use ($user) {
+                    $query->where('unit_kerja_id', $user->unit_kerja_id)
+                        ->where('is_profile_change_pending', true);
+                })
+                ->get()
+            : collect();
+        $daftarDokterMagang = $user->unit_kerja_id !== null
+            ? User::where('role', 'dokter_magang')
+                ->where('unit_kerja_id', $user->unit_kerja_id)
+                ->get()
+            : collect();
 
         return view('manajemen-ubah-data', compact('daftarPerubahanData', 'daftarDokterMagang'));
     }
@@ -35,11 +36,9 @@ class VerifikasiUbahDataController extends Controller
         $user = request()->user();
 
         if ($user->role !== 'pembimbing_lapangan'
-            || ! $user->unit_kerja_id
-            || ! $user->departemen_id
+            || $user->unit_kerja_id === null
             || $dokterMagang->role !== 'dokter_magang'
             || $dokterMagang->unit_kerja_id !== $user->unit_kerja_id
-            || $dokterMagang->departemen_id !== $user->departemen_id
             || ! $dokterMagang->is_profile_change_pending) {
             abort(403);
         }

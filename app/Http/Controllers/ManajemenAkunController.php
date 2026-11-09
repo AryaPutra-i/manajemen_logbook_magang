@@ -32,10 +32,17 @@ class ManajemenAkunController extends Controller
 
     public function create()
     {
-        $daftarNamaUnitKerja = UnitKerja::select('nama')->pluck('nama')->toArray();
-        $daftarNamaDepartemen = Departemen::select('nama')->pluck('nama')->toArray();
+        $daftarUnitKerja = UnitKerja::with('departemens')->get(['id', 'nama', 'jenis', 'created_at']);
+        $daftarUnitKerja->each(function (UnitKerja $unitKerja): void {
+            if ($unitKerja->jenis === 'Dinas_Kesehatan' && $unitKerja->created_at === null) {
+                $unitKerja->jenis = 'Puskesmas';
+            }
+        });
+        $daftarDepartemenDinasKesehatan = Departemen::whereNull('unit_kerja_id')
+            ->orderBy('nama')
+            ->get(['id', 'nama']);
 
-        return view('tambah-akun', compact('daftarNamaUnitKerja', 'daftarNamaDepartemen'));
+        return view('tambah-akun', compact('daftarUnitKerja', 'daftarDepartemenDinasKesehatan'));
     }
 
     public function editData()
@@ -106,15 +113,27 @@ class ManajemenAkunController extends Controller
         }
 
         $username = User::generateUniqueUsername($validated['nama']);
-
         $unitKerjaId = in_array($validated['role'], ['dokter_magang', 'pembimbing_lapangan', 'mahasiswa_magang'], true)
-            ? UnitKerja::where('nama', $validated['namaUnitKerja'] ?? null)->value('id')
+            ? UnitKerja::where('nama', $validated['namaUnitKerja'])
+                ->where('jenis', $validated['jenisUnitKerja'])
+                ->value('id')
             : null;
-        $departemenId = in_array($validated['role'], ['dokter_magang', 'pembimbing_lapangan', 'mahasiswa_magang'], true)
-            ? Departemen::where('nama', $validated['namaDepartemen'] ?? null)->value('id')
-            : null;
+        $departemenId = $validated['role'] === 'dokter_magang'
+            || $unitKerjaId === null
+            || blank($validated['namaDepartemen'] ?? null)
+            ? null
+            : Departemen::where('unit_kerja_id', $unitKerjaId)
+                ->where('nama', $validated['namaDepartemen'])
+                ->value('id');
 
-        User::create([...$validated, 'username' => $username, 'password' => Hash::make('password123'), 'unit_kerja_id' => $unitKerjaId, 'departemen_id' => $departemenId]);
+        unset($validated['jenisUnitKerja'], $validated['namaUnitKerja'], $validated['namaDepartemen']);
+        User::create([
+            ...$validated,
+            'username' => $username,
+            'password' => Hash::make('password123'),
+            'unit_kerja_id' => $unitKerjaId,
+            'departemen_id' => $departemenId,
+        ]);
 
         return redirect()->route('akun.menu')->with('status', 'Akun berhasil ditambah');
     }
@@ -128,17 +147,27 @@ class ManajemenAkunController extends Controller
             ? $validated['namaUnitKerja']
             : $user->unitKerja?->nama;
 
-        $namaDepartemen = array_key_exists('namaDepartemen', $validated)
-            ? $validated['namaDepartemen']
-            : $user->departemen?->nama;
+        $namaDepartemen = $role === 'dokter_magang'
+            ? null
+            : (array_key_exists('namaDepartemen', $validated)
+                ? $validated['namaDepartemen']
+                : $user->departemen?->nama);
+        $jenisUnitKerja = array_key_exists('jenisUnitKerja', $validated)
+            ? $validated['jenisUnitKerja']
+            : $user->unitKerja?->jenis;
 
         $unitKerjaId = in_array($role, ['dokter_magang', 'pembimbing_lapangan', 'mahasiswa_magang'], true)
-            ? UnitKerja::where('nama', $namaUnitKerja)->value('id')
+            ? UnitKerja::where('nama', $namaUnitKerja)
+                ->where('jenis', $jenisUnitKerja)
+                ->value('id')
             : null;
-        $departemenId = in_array($role, ['dokter_magang', 'pembimbing_lapangan', 'mahasiswa_magang'], true)
-            ? Departemen::where('nama', $namaDepartemen)->value('id')
-            : null;
+        $departemenId = $role === 'dokter_magang' || $unitKerjaId === null || blank($namaDepartemen)
+            ? null
+            : Departemen::where('unit_kerja_id', $unitKerjaId)
+                ->where('nama', $namaDepartemen)
+                ->value('id');
 
+        unset($validated['jenisUnitKerja'], $validated['namaUnitKerja'], $validated['namaDepartemen']);
         $updatedData = [...$validated, 'unit_kerja_id' => $unitKerjaId, 'departemen_id' => $departemenId];
 
         if ($user->nama !== $validated['nama']) {
@@ -166,10 +195,18 @@ class ManajemenAkunController extends Controller
 
     public function edit(User $user)
     {
-        $daftarNamaUnitKerja = UnitKerja::select('nama')->pluck('nama')->toArray();
-        $daftarNamaDepartemen = Departemen::select('nama')->pluck('nama')->toArray();
+        $daftarUnitKerja = UnitKerja::with('departemens')->get(['id', 'nama', 'jenis', 'created_at']);
+        $daftarUnitKerja->each(function (UnitKerja $unitKerja): void {
+            if ($unitKerja->jenis === 'Dinas_Kesehatan' && $unitKerja->created_at === null) {
+                $unitKerja->jenis = 'Puskesmas';
+            }
+        });
+        $user->setRelation('unitKerja', $daftarUnitKerja->firstWhere('id', $user->unit_kerja_id));
+        $daftarDepartemenDinasKesehatan = Departemen::whereNull('unit_kerja_id')
+            ->orderBy('nama')
+            ->get(['id', 'nama']);
 
-        return view('edit-akun', compact('user', 'daftarNamaUnitKerja', 'daftarNamaDepartemen'));
+        return view('edit-akun', compact('user', 'daftarUnitKerja', 'daftarDepartemenDinasKesehatan'));
     }
 
     public function import(Request $request)

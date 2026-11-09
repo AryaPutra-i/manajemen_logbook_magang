@@ -13,12 +13,15 @@ class VerifikasiUbahDataMahasiswaController extends Controller
     public function index()
     {
         $user = request()->user();
-        $daftarPerubahanData = $user->role === 'pembimbing_lapangan' && $user->unit_kerja_id
+        $daftarPerubahanData = $user->role === 'pembimbing_lapangan' && $user->unit_kerja_id !== null
             ? User::query()
                 ->with(['unitKerja', 'departemen'])
                 ->where('role', 'mahasiswa_magang')
                 ->where('unit_kerja_id', $user->unit_kerja_id)
-                ->where('departemen_id', $user->departemen_id)
+                ->when(
+                    $user->departemen_id !== null,
+                    fn ($query) => $query->where('departemen_id', $user->departemen_id)
+                )
                 ->where('is_profile_change_pending', true)
                 ->get()
             : collect();
@@ -31,10 +34,9 @@ class VerifikasiUbahDataMahasiswaController extends Controller
         $user = request()->user();
 
         $authorized = $user->role === 'pembimbing_lapangan'
-            && $user->unit_kerja_id
-            && $user->departemen_id
+            && $user->unit_kerja_id !== null
             && $mahasiswaMagang->unit_kerja_id === $user->unit_kerja_id
-            && $mahasiswaMagang->departemen_id === $user->departemen_id;
+            && ($user->departemen_id === null || $mahasiswaMagang->departemen_id === $user->departemen_id);
 
         if (! $authorized
         || $mahasiswaMagang->role !== 'mahasiswa_magang'

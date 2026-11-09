@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests;
 
-use App\UserRole;
 use App\Models\UnitKerja;
+use App\UserRole;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -26,31 +26,44 @@ class TambahAkunRequest extends FormRequest
      */
     public function rules(): array
     {
-        $requiresPlacement = [
+        $role = $this->input('role');
+        $requiresPlacement = in_array($role, [
             UserRole::DokterMagang->value,
             UserRole::PembimbingLapangan->value,
             UserRole::MahasiswaMagang->value,
-        ];
+        ], true);
+        $allowedUnitTypes = $role === UserRole::DokterMagang->value
+            ? ['Puskesmas']
+            : ['Dinas_Kesehatan', 'Puskesmas'];
 
         return [
             'role' => ['required', new Enum(UserRole::class)],
             'nama' => ['required', 'string', 'max:255'],
+            'jenisUnitKerja' => [
+                'nullable',
+                'string',
+                Rule::requiredIf($requiresPlacement),
+                Rule::in($allowedUnitTypes),
+            ],
             'namaUnitKerja' => [
                 'nullable',
                 'string',
                 'max:255',
-                Rule::requiredIf(fn () => in_array($this->input('role'), $requiresPlacement, true)),
-                Rule::exists('unit_kerjas', 'nama'),
+                Rule::requiredIf($requiresPlacement),
+                Rule::exists('unit_kerjas', 'nama')->where(
+                    fn ($query) => $query->where('jenis', $this->input('jenisUnitKerja'))
+                ),
             ],
             'namaDepartemen' => [
                 'nullable',
                 'string',
                 'max:255',
-                Rule::requiredIf(fn () => in_array($this->input('role'), $requiresPlacement, true)),
                 Rule::exists('departemens', 'nama')->where(function ($query) {
                     $query->whereIn(
                         'unit_kerja_id',
-                        UnitKerja::where('nama', $this->input('namaUnitKerja'))->select('id')
+                        UnitKerja::where('nama', $this->input('namaUnitKerja'))
+                            ->where('jenis', $this->input('jenisUnitKerja'))
+                            ->select('id')
                     );
                 }),
             ],
@@ -67,9 +80,10 @@ class TambahAkunRequest extends FormRequest
         return [
             'role' => 'Role tidak valid',
             'nama' => 'Nama tidak valid',
+            'jenisUnitKerja.required' => 'Jenis unit kerja wajib dipilih untuk role ini',
+            'jenisUnitKerja.in' => 'Jenis unit kerja tidak sesuai dengan role',
             'namaUnitKerja.required' => 'Unit kerja wajib diisi untuk role ini',
-            'namaUnitKerja.exists' => 'Tidak ada unit kerja dengan nama tersebut',
-            'namaDepartemen.required' => 'Departemen wajib diisi untuk role ini',
+            'namaUnitKerja.exists' => 'Unit kerja tidak sesuai dengan jenis yang dipilih',
             'namaDepartemen.exists' => 'Departemen tidak sesuai dengan unit kerja yang dipilih',
             'nip' => 'NIP tidak valid',
             'nip.unique' => 'NIP sudah terdaftar',

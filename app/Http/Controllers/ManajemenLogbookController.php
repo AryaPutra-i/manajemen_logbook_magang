@@ -33,6 +33,10 @@ class ManajemenLogbookController extends Controller
             $daftarLogMahasiswaMagang = $user->unit_kerja_id
                 ? LogMahasiswaMagang::with(['unitKerja', 'departemen', 'mahasiswaMagang'])
                     ->where('unit_kerja_id', $user->unit_kerja_id)
+                    ->when(
+                        $user->departemen_id !== null,
+                        fn ($query) => $query->where('departemen_id', $user->departemen_id)
+                    )
                     ->get()
                 : collect();
         }

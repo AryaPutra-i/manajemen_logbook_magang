@@ -27,8 +27,8 @@ class LogMahasiswaController extends Controller
     {
         $user = request()->user();
 
-        if ($user->unit_kerja_id === null || $user->departemen_id === null) {
-            abort(422, 'Akun mahasiswa harus memiliki unit kerja dan departemen.');
+        if ($user->unit_kerja_id === null) {
+            abort(422, 'Akun mahasiswa harus memiliki unit kerja.');
         }
 
         $validated = $request->validated();
@@ -39,8 +39,8 @@ class LogMahasiswaController extends Controller
             'nama_kegiatan' => $validated['namaKegiatan'],
             'tanggal' => $validated['tanggal'],
             'deskripsi' => $validated['deskripsi'],
-            'departemen_id' => $request->user()->departemen_id,
-            'unit_kerja_id' => $request->user()->unit_kerja_id,
+            'departemen_id' => $user->departemen_id,
+            'unit_kerja_id' => $user->unit_kerja_id,
             'mahasiswa_magang_id' => $request->user()->id,
             'dokumentasi' => $filePath,
         ]);
@@ -59,8 +59,7 @@ class LogMahasiswaController extends Controller
             abort_unless($logMagang->mahasiswa_magang_id === $user->id, 403);
         } elseif ($user->role === 'pembimbing_lapangan') {
             abort_unless(
-                $logMagang->unit_kerja_id !== null &&
-                $logMagang->unit_kerja_id === $user->unit_kerja_id,
+                $this->isAccessibleByPembimbing($logMagang, $user),
                 403
             );
         }
@@ -70,13 +69,15 @@ class LogMahasiswaController extends Controller
 
     private function authorizePembimbing(LogMahasiswaMagang $logMagang, User $user): void
     {
-        $authorized = $user->role === 'pembimbing_lapangan'
-            && $user->unit_kerja_id !== null
-            && $user->departemen_id !== null
-            && $logMagang->unit_kerja_id === $user->unit_kerja_id
-            && $logMagang->departemen_id === $user->departemen_id;
+        abort_unless($this->isAccessibleByPembimbing($logMagang, $user), 403);
+    }
 
-        abort_unless($authorized, 403);
+    private function isAccessibleByPembimbing(LogMahasiswaMagang $logMagang, User $user): bool
+    {
+        return $user->role === 'pembimbing_lapangan'
+            && $user->unit_kerja_id !== null
+            && $logMagang->unit_kerja_id === $user->unit_kerja_id
+            && ($user->departemen_id === null || $logMagang->departemen_id === $user->departemen_id);
     }
 
     public function verifikasiLogMahasiswa(LogMahasiswaMagang $logMagang)
