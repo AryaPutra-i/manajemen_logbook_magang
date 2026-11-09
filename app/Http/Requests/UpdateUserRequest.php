@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests;
 
-use App\UserRole;
 use App\Models\UnitKerja;
+use App\UserRole;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -27,21 +27,50 @@ class UpdateUserRequest extends FormRequest
     public function rules(): array
     {
         $userId = $this->route('user')->id;
+        $role = $this->input('role', $this->route('user')->role);
+        $requiresPlacement = in_array($role, [
+            UserRole::DokterMagang->value,
+            UserRole::PembimbingLapangan->value,
+            UserRole::MahasiswaMagang->value,
+        ], true);
+        $allowedUnitTypes = $role === UserRole::DokterMagang->value
+            ? ['Puskesmas']
+            : ['Dinas_Kesehatan', 'Puskesmas'];
 
         return [
             'role' => ['nullable', new Enum(UserRole::class)],
             'nama' => ['required', 'string', 'max:255'],
-            'namaUnitKerja' => ['nullable', 'string', 'max:255', Rule::exists('unit_kerjas', 'nama')],
+            'jenisUnitKerja' => [
+                'nullable',
+                'string',
+                Rule::requiredIf($requiresPlacement),
+                Rule::in($allowedUnitTypes),
+            ],
+            'namaUnitKerja' => [
+                'nullable',
+                'string',
+                'max:255',
+                Rule::requiredIf($requiresPlacement),
+                Rule::exists('unit_kerjas', 'nama')->where(
+                    fn ($query) => $query->where('jenis', $this->input('jenisUnitKerja'))
+                ),
+            ],
             'namaDepartemen' => [
                 'nullable',
                 'string',
                 'max:255',
                 Rule::exists('departemens', 'nama')->where(function ($query) {
                     $unitKerjaName = $this->input('namaUnitKerja', $this->route('user')->unitKerja?->nama);
+                    $jenisUnitKerja = $this->input(
+                        'jenisUnitKerja',
+                        $this->route('user')->unitKerja?->jenis
+                    );
 
                     $query->whereIn(
                         'unit_kerja_id',
-                        UnitKerja::where('nama', $unitKerjaName)->select('id')
+                        UnitKerja::where('nama', $unitKerjaName)
+                            ->where('jenis', $jenisUnitKerja)
+                            ->select('id')
                     );
                 }),
             ],
@@ -53,36 +82,15 @@ class UpdateUserRequest extends FormRequest
         ];
     }
 
-    public function withValidator($validator): void
-    {
-        $validator->after(function ($validator): void {
-            $user = $this->route('user');
-            $role = $this->input('role', $user->role);
-            $requiresPlacement = in_array($role, [
-                UserRole::DokterMagang->value,
-                UserRole::PembimbingLapangan->value,
-                UserRole::MahasiswaMagang->value,
-            ], true);
-
-            $unitKerjaName = $this->input('namaUnitKerja', $user->unitKerja?->nama);
-            $departemenName = $this->input('namaDepartemen', $user->departemen?->nama);
-
-            if ($requiresPlacement && blank($unitKerjaName)) {
-                $validator->errors()->add('namaUnitKerja', 'Unit kerja wajib diisi untuk role ini');
-            }
-
-            if ($requiresPlacement && blank($departemenName)) {
-                $validator->errors()->add('namaDepartemen', 'Departemen wajib diisi untuk role ini');
-            }
-        });
-    }
-
     public function messages(): array
     {
         return [
             'role' => 'Role tidak valid',
             'nama' => 'Nama tidak valid',
-            'namaUnitKerja.exists' => 'Tidak ada unit kerja dengan nama tersebut',
+            'jenisUnitKerja.required' => 'Jenis unit kerja wajib dipilih untuk role ini',
+            'jenisUnitKerja.in' => 'Jenis unit kerja tidak sesuai dengan role',
+            'namaUnitKerja.required' => 'Unit kerja wajib diisi untuk role ini',
+            'namaUnitKerja.exists' => 'Unit kerja tidak sesuai dengan jenis yang dipilih',
             'namaDepartemen.exists' => 'Departemen tidak sesuai dengan unit kerja yang dipilih',
             'nip' => 'NIP tidak valid',
             'nip.unique' => 'NIP sudah terdaftar',

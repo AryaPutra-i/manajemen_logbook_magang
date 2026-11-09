@@ -138,7 +138,7 @@
 
                         <button class="text-nowrap w-100 btn btn-success" form="editLog" type="submit">Simpan
                             Perubahan</button>
-                    @elseif ($user->role === 'pembimbing_lapangan_puskesmas')
+                    @elseif ($user->role === 'pembimbing_lapangan')
                         <form class="w-100 m-0" method="POST"
                             action="{{ route('logbook.verify', ['logMagang' => $logMagang->id]) }}">
                             @csrf

@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use DB;
+use App\Models\UnitKerja;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\LazyCollection;
 
@@ -29,8 +29,11 @@ class PuskesmasSeeder extends Seeder
             }
 
             fclose($handle);
-        })->chunk(1000)->each(function ($chunk) {
-            DB::table('puskesmas')->insert($chunk->toArray());
+        })->each(function (array $unitKerja): void {
+            UnitKerja::updateOrCreate(
+                ['email' => $unitKerja['email']],
+                [...$unitKerja, 'jenis' => 'Puskesmas']
+            );
         });
     }
 }

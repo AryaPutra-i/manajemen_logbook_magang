@@ -103,7 +103,7 @@
                                 <tr>
                                     <td>UNIT KERJA</td>
                                     <td>:</td>
-                                    <td>{{ $user->puskesmas->nama }}</td>
+                                    <td>{{ $user->unitKerja?->nama ?? '-' }}</td>
                                 </tr>
                                 <tr>
                                     <td>Tanggal</td>

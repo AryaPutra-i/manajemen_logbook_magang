@@ -1,6 +1,10 @@
 @php
-    $lokasiMagang = $user->puskesmas?->nama ?? $user->departemen?->nama ?? '-';
-    $jenisPenempatan = $user->puskesmas_id ? 'Puskesmas' : ($user->departemen_id ? 'Departemen' : '-');
+    $lokasiMagang = implode(' - ', array_filter([$user->unitKerja?->nama, $user->departemen?->nama])) ?: '-';
+    $jenisPenempatan = match ($user->unitKerja?->jenis) {
+        'Puskesmas' => 'Puskesmas',
+        'Dinas_Kesehatan' => 'Dinas Kesehatan',
+        default => '-',
+    };
     $bulanRekapan = $daftarLog
         ->sortBy(fn ($log) => $log->tanggal->format('Y-m-d'))
         ->groupBy(fn ($log) => $log->tanggal->format('Y-m'));

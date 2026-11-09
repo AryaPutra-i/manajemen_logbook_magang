@@ -20,7 +20,7 @@
             <label class="col-lg-3 col-form-label" for="unitMagang">Unit magang</label>
             <div class="col-lg-9">
                 <input class="form-control" id="unitMagang"
-                    value="{{ $logMahasiswa->puskesmas?->nama ?? $logMahasiswa->departemen?->nama ?? '-' }}"
+                    value="{{ implode(' - ', array_filter([$logMahasiswa->unitKerja?->nama, $logMahasiswa->departemen?->nama])) ?: '-' }}"
                     disabled>
             </div>
         </div>
