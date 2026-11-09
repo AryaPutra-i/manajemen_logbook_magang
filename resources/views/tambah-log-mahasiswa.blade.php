@@ -1,8 +1,8 @@
 <x-home-layout>
     @php
         $mahasiswa = auth()->user();
-        $lokasiMagang = $mahasiswa->puskesmas?->nama ?? $mahasiswa->departemen?->nama;
-        $hasLokasiMagang = $mahasiswa->puskesmas_id !== null || $mahasiswa->departemen_id !== null;
+        $lokasiMagang = implode(' - ', array_filter([$mahasiswa->unitKerja?->nama, $mahasiswa->departemen?->nama]));
+        $hasLokasiMagang = $mahasiswa->unit_kerja_id !== null;
     @endphp
     <section class="p-4 w-100 d-flex flex-column gap-3" style="max-width: 768px;">
         @session('status')

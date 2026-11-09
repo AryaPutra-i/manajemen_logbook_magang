@@ -55,11 +55,11 @@
                 </div>
 
                 <div class="row align-items-center g-2 mb-3">
-                    <label class="col-lg-3 col-form-label mb-1 mb-lg-0" for="puskesmas">Puskesmas</label>
+                    <label class="col-lg-3 col-form-label mb-1 mb-lg-0" for="unitKerja">Unit Kerja</label>
                     <div class="col-lg-9">
                         <div class="mb-3 input-group">
-                            <input required disabled value="{{ $dokterMagang->puskesmas?->nama }}" class="form-control"
-                                type="text" name="puskesmas" id="puskesmas" placeholder="Masukkan puskesmas">
+                            <input required disabled value="{{ $dokterMagang->unitKerja?->nama }}" class="form-control"
+                                type="text" name="unitKerja" id="unitKerja" placeholder="Masukkan unit kerja">
                         </div>
                     </div>
                 </div>

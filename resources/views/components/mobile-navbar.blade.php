@@ -21,31 +21,10 @@
         </div>
         <div class="d-lg-none collapse navbar-collapse" style="background-color: #DDA15E" id="navbarSupportedContent">
             <ul class="d-lg-none navbar-nav me-auto mb-0">
-                @if (request()->user()->role === 'mahasiswa_magang')
-                    @php
-                        $navLinks = array_merge($navLinks, [
+                    @if (request()->user()->role === 'mahasiswa_magang')
+                        @php
+                            $navLinks = array_merge($navLinks, [
                             ['icon' => 'bi-person-circle', 'level' => 1, 'label' => 'Manajemen Akun', 'href' => route('akun.menu')],
-                            ['icon' => 'bi-person-vcard', 'level' => 2, 'label' => 'Ubah Data', 'href' => route('akun.ubah-data.edit')],
-                            ['icon' => 'bi-key', 'level' => 2, 'label' => 'Ganti Password', 'href' => route('akun.password.index')],
-                            ['icon' => 'bi-book', 'level' => 1, 'label' => 'Manajemen Logbook', 'href' => route('logbook.index')],
-                        ]);
-                    @endphp
-                @elseif (request()->user()->role === 'pembimbing_lapangan_puskesmas')
-                    @php
-                        $navLinks = array_merge($navLinks, [
-                            ['icon' => 'bi-person-circle', 'level' => 1, 'label' => 'Manajemen Akun', 'href' => route('akun.menu')],
-                            ['icon' => 'bi-person-lines-fill', 'level' => 2, 'label' => 'Manajemen Ubah Data Dokter', 'href' => route('ubah-data.queue')],
-                            ['icon' => 'bi-person-lines-fill', 'level' => 2, 'label' => 'Manajemen Ubah Data Mahasiswa', 'href' => route('ubah-data-mahasiswa.queue')],
-                            ['icon' => 'bi-person-vcard', 'level' => 2, 'label' => 'Ubah Data', 'href' => route('akun.ubah-data.edit')],
-                            ['icon' => 'bi-key', 'level' => 2, 'label' => 'Ganti Password', 'href' => route('akun.password.index')],
-                            ['icon' => 'bi-book', 'level' => 1, 'label' => 'Manajemen Logbook', 'href' => route('logbook.index')],
-                        ]);
-                    @endphp
-                @elseif (request()->user()->role === 'pembimbing_lapangan_departemen')
-                    @php
-                        $navLinks = array_merge($navLinks, [
-                            ['icon' => 'bi-person-circle', 'level' => 1, 'label' => 'Manajemen Akun', 'href' => route('akun.menu')],
-                            ['icon' => 'bi-person-lines-fill', 'level' => 2, 'label' => 'Manajemen Ubah Data Mahasiswa', 'href' => route('ubah-data-mahasiswa.queue')],
                             ['icon' => 'bi-person-vcard', 'level' => 2, 'label' => 'Ubah Data', 'href' => route('akun.ubah-data.edit')],
                             ['icon' => 'bi-key', 'level' => 2, 'label' => 'Ganti Password', 'href' => route('akun.password.index')],
                             ['icon' => 'bi-book', 'level' => 1, 'label' => 'Manajemen Logbook', 'href' => route('logbook.index')],

@@ -33,12 +33,12 @@
                         </div>
 
                         @if ($user->role === 'admin')
-                            <label style="color: #FEFAE0;" class="fw-bold mt-3" for="puskesmas">Puskesmas dokter</label>
-                            <input class="form-control" list="puskesmasDatalist" type="text" id="puskesmas"
-                                placeholder="Pilih puskesmas">
-                            <datalist id="puskesmasDatalist">
-                                @foreach ($daftarLogDokterMagang->pluck('puskesmas.nama')->filter()->unique() as $namaPuskesmas)
-                                    <option value="{{ $namaPuskesmas }}">
+                            <label style="color: #FEFAE0;" class="fw-bold mt-3" for="unitKerja">Unit Kerja dokter</label>
+                            <input class="form-control" list="unitKerjaDatalist" type="text" id="unitKerja"
+                                placeholder="Pilih unit kerja">
+                            <datalist id="unitKerjaDatalist">
+                                @foreach ($daftarLogDokterMagang->pluck('unitKerja.nama')->filter()->unique() as $namaUnitKerja)
+                                    <option value="{{ $namaUnitKerja }}">
                                 @endforeach
                             </datalist>
 
@@ -53,9 +53,9 @@
 
                             <label style="color: #FEFAE0;" class="fw-bold mt-3" for="unitMahasiswa">Unit mahasiswa</label>
                             <input class="form-control" list="unitMahasiswaDatalist" type="text" id="unitMahasiswa"
-                                placeholder="Pilih puskesmas atau departemen">
+                                placeholder="Pilih unit kerja">
                             <datalist id="unitMahasiswaDatalist">
-                                @foreach ($daftarLogMahasiswaMagang->map(fn ($log) => $log->puskesmas?->nama ?? $log->departemen?->nama)->filter()->unique() as $unitMahasiswa)
+                                @foreach ($daftarLogMahasiswaMagang->map(fn ($log) => $log->unitKerja?->nama ?? $log->departemen?->nama)->filter()->unique() as $unitMahasiswa)
                                     <option value="{{ $unitMahasiswa }}">
                                 @endforeach
                             </datalist>
@@ -98,7 +98,7 @@
                     @endif
                 </div>
 
-                @if (in_array($user->role, ['admin', 'dokter_magang', 'pembimbing_lapangan_puskesmas'], true))
+                @if (in_array($user->role, ['admin', 'dokter_magang', 'pembimbing_lapangan'], true))
                     <div>
                         <h2 class="h4">Log Dokter Magang</h2>
                         <div class="table-responsive">
@@ -106,7 +106,7 @@
                                 <thead>
                                     <tr>
                                         <th class="text-start">Tanggal</th>
-                                        <th>Puskesmas</th>
+                                        <th>Unit Kerja</th>
                                         <th>Username dokter</th>
                                         <th>Deskripsi</th>
                                         <th>Hambatan</th>
@@ -119,7 +119,7 @@
                                     @foreach ($daftarLogDokterMagang as $logMagang)
                                         <tr>
                                             <td>{{ $logMagang->tanggal->isoFormat('YYYY-MM-DD') }}</td>
-                                            <td>{{ $logMagang->puskesmas?->nama ?? '-' }}</td>
+                                            <td>{{ $logMagang->unitKerja?->nama ?? '-' }}</td>
                                             <td>{{ $logMagang->dokterMagang?->username ?? '-' }}</td>
                                             <td>{{ $logMagang->deskripsi }}</td>
                                             <td>{{ $logMagang->hambatan }}</td>
@@ -162,7 +162,7 @@
                                                             <i class="bi bi-trash-fill text-white"></i> Hapus
                                                         </button>
                                                     </form>
-                                                @elseif ($user->role === 'pembimbing_lapangan_puskesmas')
+                                                @elseif ($user->role === 'pembimbing_lapangan')
                                                     <form class="d-inline" method="POST"
                                                         action="{{ route('logbook.verify', ['logMagang' => $logMagang->id]) }}">
                                                         @csrf
@@ -187,7 +187,7 @@
                     </div>
                 @endif
 
-                @if (in_array($user->role, ['admin', 'mahasiswa_magang', 'pembimbing_lapangan_puskesmas', 'pembimbing_lapangan_departemen'], true))
+                @if (in_array($user->role, ['admin', 'mahasiswa_magang', 'pembimbing_lapangan'], true))
                     <div>
                         <h2 class="h4">Log Mahasiswa Magang</h2>
                         <div class="table-responsive">
@@ -208,7 +208,7 @@
                                     @foreach ($daftarLogMahasiswaMagang as $logMahasiswa)
                                         <tr>
                                             <td>{{ $logMahasiswa->tanggal->isoFormat('YYYY-MM-DD') }}</td>
-                                            <td>{{ $logMahasiswa->puskesmas?->nama ?? $logMahasiswa->departemen?->nama ?? '-' }}</td>
+                                            <td>{{ $logMahasiswa->unitKerja?->nama ?? $logMahasiswa->departemen?->nama ?? '-' }}</td>
                                             <td>{{ $logMahasiswa->mahasiswaMagang?->username ?? '-' }}</td>
                                             <td>{{ $logMahasiswa->nama_kegiatan }}</td>
                                             <td>{{ $logMahasiswa->deskripsi }}</td>
@@ -262,7 +262,7 @@
                                                             <i class="bi bi-trash-fill text-white"></i> Hapus
                                                         </button>
                                                     </form>
-                                                @elseif (in_array($user->role, ['pembimbing_lapangan_puskesmas', 'pembimbing_lapangan_departemen'], true))
+                                                @elseif ($user->role === 'pembimbing_lapangan')
                                                     <form class="d-inline" method="POST"
                                                         action="{{ route('logbook.mahasiswa.verify', ['logMagang' => $logMahasiswa->id]) }}">
                                                         @csrf
@@ -367,7 +367,7 @@
 
             document.querySelector('#filterButton').addEventListener('click', function() {
                 @if ($user->role === 'admin')
-                    dokterTable?.column(1).search(document.querySelector('#puskesmas').value);
+                    dokterTable?.column(1).search(document.querySelector('#unitKerja').value);
                     dokterTable?.column(2).search(document.querySelector('#usernameDokter').value);
                     mahasiswaTable?.column(1).search(document.querySelector('#unitMahasiswa').value);
                     mahasiswaTable?.column(2).search(document.querySelector('#usernameMahasiswa').value);

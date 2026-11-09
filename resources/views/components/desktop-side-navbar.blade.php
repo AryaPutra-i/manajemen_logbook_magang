@@ -16,27 +16,6 @@
                 ['icon' => 'bi-book', 'level' => 1, 'label' => 'Manajemen Logbook', 'href' => route('logbook.index')],
             ]);
         @endphp
-    @elseif (request()->user()->role === 'pembimbing_lapangan_puskesmas')
-        @php
-            $navLinks = array_merge($navLinks, [
-                ['icon' => 'bi-person-circle', 'level' => 1, 'label' => 'Manajemen Akun', 'href' => route('akun.menu')],
-                ['icon' => 'bi-person-lines-fill', 'level' => 2, 'label' => 'Manajemen Ubah Data Dokter', 'href' => route('ubah-data.queue')],
-                ['icon' => 'bi-person-lines-fill', 'level' => 2, 'label' => 'Manajemen Ubah Data Mahasiswa', 'href' => route('ubah-data-mahasiswa.queue')],
-                ['icon' => 'bi-person-vcard', 'level' => 2, 'label' => 'Ubah Data', 'href' => route('akun.ubah-data.edit')],
-                ['icon' => 'bi-key', 'level' => 2, 'label' => 'Ganti Password', 'href' => route('akun.password.index')],
-                ['icon' => 'bi-book', 'level' => 1, 'label' => 'Manajemen Logbook', 'href' => route('logbook.index')],
-            ]);
-        @endphp
-    @elseif (request()->user()->role === 'pembimbing_lapangan_departemen')
-        @php
-            $navLinks = array_merge($navLinks, [
-                ['icon' => 'bi-person-circle', 'level' => 1, 'label' => 'Manajemen Akun', 'href' => route('akun.menu')],
-                ['icon' => 'bi-person-lines-fill', 'level' => 2, 'label' => 'Manajemen Ubah Data Mahasiswa', 'href' => route('ubah-data-mahasiswa.queue')],
-                ['icon' => 'bi-person-vcard', 'level' => 2, 'label' => 'Ubah Data', 'href' => route('akun.ubah-data.edit')],
-                ['icon' => 'bi-key', 'level' => 2, 'label' => 'Ganti Password', 'href' => route('akun.password.index')],
-                ['icon' => 'bi-book', 'level' => 1, 'label' => 'Manajemen Logbook', 'href' => route('logbook.index')],
-            ]);
-        @endphp
     @endif
     <ul class="nav nav-pills flex-column mb-auto">
         <li style="@if (request()->routeIs('home')) background-color: #FEFAE0; color: #283618; @endif"
@@ -58,7 +37,7 @@
                         'align-items-center d-flex gap-2 fs-6 nav-link text-decoration-none',
                         'ps-5' => $navLink['level'] === 2,
                     ]) @if (request()->url() === $navLink['href']) aria-current="page" @endif
-                    href="{{ $navLink['href'] }}">
+                    >
                     <i style="@if (request()->url() === $navLink['href']) color: #283618; @else color: #FEFAE0; @endif"
                         class="fs-3 me-2 bi {{ $navLink['icon'] }}" width="16" height="16"
                         aria-hidden="true"></i>

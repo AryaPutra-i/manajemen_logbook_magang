@@ -1,6 +1,6 @@
 <x-home-layout>
     <section class="p-4 w-100 row row-cols-lg-2 row-cols-1 g-3">
-        @if ($user->role === 'pembimbing_lapangan_puskesmas')
+        @if ($user->role === 'pembimbing_lapangan')
             <a class="col" href="{{ route('ubah-data.queue') }}" style="text-decoration: none">
                 <div class="card w-100">
                     <div class="row g-0">
@@ -19,7 +19,7 @@
             </a>
         @endif
 
-        @if (in_array($user->role, ['pembimbing_lapangan_puskesmas', 'pembimbing_lapangan_departemen'], true))
+        @if ($user->role === 'pembimbing_lapangan')
             <a class="col" href="{{ route('ubah-data-mahasiswa.queue') }}" style="text-decoration: none">
                 <div class="card w-100">
                     <div class="row g-0">
@@ -66,6 +66,7 @@
                         <div class="card-body py-4">
                             <h4 class="card-title">Ganti Password</h4>
                             <p class="card-text">Ganti password Anda disini</p>
+                            <p class="card-text"><small class="text-muted">*Password harus terdiri dari 8-20 karakter</small></p>
                         </div>
                     </div>
                 </div>

@@ -90,8 +90,7 @@
                                         'admin' => 'Admin',
                                         'dokter_magang' => 'Dokter Magang',
                                         'mahasiswa_magang' => 'Mahasiswa Magang',
-                                        'pembimbing_lapangan_puskesmas' => 'Pembimbing Lapangan Puskesmas',
-                                        'pembimbing_lapangan_departemen' => 'Pembimbing Lapangan Departemen',
+                                        'pembimbing_lapangan' => 'Pembimbing Lapangan',
                                         default => $user->role,
                                     } }}
                                 </td>
