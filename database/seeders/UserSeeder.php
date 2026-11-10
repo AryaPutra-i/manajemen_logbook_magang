@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\UnitKerja;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -13,6 +14,7 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         // User::factory(9)->create();
+        $dinkesId = UnitKerja::where('jenis', 'Dinas_Kesehatan')->value('id');
 
         User::factory()->create([
             'username' => 'admin_dkk_2',
@@ -63,7 +65,7 @@ class UserSeeder extends Seeder
             'nim' => fake()->regexify('[0-9]{10}'),
             'alamat' => fake()->streetAddress(),
             'universitas' => fake()->company(),
-            'unit_kerja_id' => null,
+            'unit_kerja_id' => $dinkesId,
             'departemen_id' => 1,
 
         ]);
@@ -76,7 +78,7 @@ class UserSeeder extends Seeder
             'nim' => null,
             'alamat' => null,
             'universitas' => null,
-            'unit_kerja_id' => null,
+            'unit_kerja_id' => $dinkesId,
             'departemen_id' => 1,
 
         ]);

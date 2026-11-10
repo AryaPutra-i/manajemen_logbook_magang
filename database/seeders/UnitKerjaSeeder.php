@@ -6,7 +6,7 @@ use App\Models\UnitKerja;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\LazyCollection;
 
-class PuskesmasSeeder extends Seeder
+class UnitKerjaSeeder extends Seeder
 {
     /**
      * Run the database seeds.
@@ -30,10 +30,28 @@ class PuskesmasSeeder extends Seeder
 
             fclose($handle);
         })->each(function (array $unitKerja): void {
+            $isDinkes = str_contains(strtolower($unitKerja['nama']), 'dinas kesehatan')
+                || ($unitKerja['email'] ?? null) === 'dinkes@surabaya.go.id';
+
             UnitKerja::updateOrCreate(
                 ['email' => $unitKerja['email']],
-                [...$unitKerja, 'jenis' => 'Puskesmas']
+                [
+                    ...$unitKerja,
+                    'jenis' => $isDinkes ? 'Dinas_Kesehatan' : 'Puskesmas',
+                ]
             );
         });
+
+        UnitKerja::updateOrCreate(
+            ['email' => 'dinkes@surabaya.go.id'],
+            [
+                'nama' => 'Dinas Kesehatan',
+                'jenis' => 'Dinas_Kesehatan',
+                'alamat' => 'Jl. Raya Jemursari No.197, Sidosermo, Kec. Wonocolo, Surabaya, Jawa Timur',
+                'kepala_upt' => 'dr. Billy Daniel Messakh, Sp.B',
+                'nomor_telepon' => '(031) 8439473',
+                'email' => 'dinkes@surabaya.go.id',
+            ]
+        );
     }
 }
