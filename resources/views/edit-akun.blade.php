@@ -1,4 +1,7 @@
 <x-home-layout>
+    @php
+        $currentJenis = $user->unitKerja?->jenis ?? ($user->departemen_id !== null && $user->departemen?->unit_kerja_id === null ? 'Dinas_Kesehatan' : null);
+    @endphp
     <section class="p-4 w-100 d-flex flex-column gap-3" style="max-width: 768px;">
         @if ($errors->any())
             <div class="alert alert-danger">

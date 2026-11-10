@@ -38,7 +38,10 @@ class ManajemenAkunController extends Controller
                 $unitKerja->jenis = 'Puskesmas';
             }
         });
-        $daftarDepartemenDinasKesehatan = Departemen::whereNull('unit_kerja_id')
+        $dinkesId = UnitKerja::where('jenis', 'Dinas_Kesehatan')->value('id');
+        $daftarDepartemenDinasKesehatan = Departemen::where(function ($query) use ($dinkesId) {
+            $query->where('unit_kerja_id', $dinkesId)->orWhereNull('unit_kerja_id');
+        })
             ->orderBy('nama')
             ->get(['id', 'nama']);
 
@@ -113,18 +116,27 @@ class ManajemenAkunController extends Controller
         }
 
         $username = User::generateUniqueUsername($validated['nama']);
-        $unitKerjaId = in_array($validated['role'], ['dokter_magang', 'pembimbing_lapangan', 'mahasiswa_magang'], true)
-            ? UnitKerja::where('nama', $validated['namaUnitKerja'])
-                ->where('jenis', $validated['jenisUnitKerja'])
-                ->value('id')
-            : null;
-        $departemenId = $validated['role'] === 'dokter_magang'
-            || $unitKerjaId === null
-            || blank($validated['namaDepartemen'] ?? null)
-            ? null
-            : Departemen::where('unit_kerja_id', $unitKerjaId)
-                ->where('nama', $validated['namaDepartemen'])
+        $jenisUnitKerja = $validated['jenisUnitKerja'] ?? null;
+        $unitKerjaId = null;
+
+        if (in_array($validated['role'], ['dokter_magang', 'pembimbing_lapangan', 'mahasiswa_magang'], true)) {
+            if ($jenisUnitKerja === 'Dinas_Kesehatan') {
+                $unitKerjaId = UnitKerja::where('jenis', 'Dinas_Kesehatan')->value('id');
+            } elseif ($jenisUnitKerja === 'Puskesmas') {
+                $unitKerjaId = UnitKerja::where('nama', $validated['namaUnitKerja'] ?? null)
+                    ->where('jenis', 'Puskesmas')
+                    ->value('id');
+            }
+        }
+
+        $departemenId = null;
+        if ($validated['role'] !== 'dokter_magang' && ! blank($validated['namaDepartemen'] ?? null)) {
+            $departemenId = Departemen::where('nama', $validated['namaDepartemen'])
+                ->where(function ($query) use ($unitKerjaId) {
+                    $query->where('unit_kerja_id', $unitKerjaId)->orWhereNull('unit_kerja_id');
+                })
                 ->value('id');
+        }
 
         unset($validated['jenisUnitKerja'], $validated['namaUnitKerja'], $validated['namaDepartemen']);
         User::create([
@@ -154,18 +166,27 @@ class ManajemenAkunController extends Controller
                 : $user->departemen?->nama);
         $jenisUnitKerja = array_key_exists('jenisUnitKerja', $validated)
             ? $validated['jenisUnitKerja']
-            : $user->unitKerja?->jenis;
+            : ($user->unitKerja?->jenis ?? ($user->departemen_id !== null && $user->departemen?->unit_kerja_id === null ? 'Dinas_Kesehatan' : null));
 
-        $unitKerjaId = in_array($role, ['dokter_magang', 'pembimbing_lapangan', 'mahasiswa_magang'], true)
-            ? UnitKerja::where('nama', $namaUnitKerja)
-                ->where('jenis', $jenisUnitKerja)
-                ->value('id')
-            : null;
-        $departemenId = $role === 'dokter_magang' || $unitKerjaId === null || blank($namaDepartemen)
-            ? null
-            : Departemen::where('unit_kerja_id', $unitKerjaId)
-                ->where('nama', $namaDepartemen)
+        $unitKerjaId = null;
+        if (in_array($role, ['dokter_magang', 'pembimbing_lapangan', 'mahasiswa_magang'], true)) {
+            if ($jenisUnitKerja === 'Dinas_Kesehatan') {
+                $unitKerjaId = UnitKerja::where('jenis', 'Dinas_Kesehatan')->value('id');
+            } elseif ($jenisUnitKerja === 'Puskesmas') {
+                $unitKerjaId = UnitKerja::where('nama', $namaUnitKerja)
+                    ->where('jenis', 'Puskesmas')
+                    ->value('id');
+            }
+        }
+
+        $departemenId = null;
+        if ($role !== 'dokter_magang' && ! blank($namaDepartemen)) {
+            $departemenId = Departemen::where('nama', $namaDepartemen)
+                ->where(function ($query) use ($unitKerjaId) {
+                    $query->where('unit_kerja_id', $unitKerjaId)->orWhereNull('unit_kerja_id');
+                })
                 ->value('id');
+        }
 
         unset($validated['jenisUnitKerja'], $validated['namaUnitKerja'], $validated['namaDepartemen']);
         $updatedData = [...$validated, 'unit_kerja_id' => $unitKerjaId, 'departemen_id' => $departemenId];
@@ -202,7 +223,10 @@ class ManajemenAkunController extends Controller
             }
         });
         $user->setRelation('unitKerja', $daftarUnitKerja->firstWhere('id', $user->unit_kerja_id));
-        $daftarDepartemenDinasKesehatan = Departemen::whereNull('unit_kerja_id')
+        $dinkesId = UnitKerja::where('jenis', 'Dinas_Kesehatan')->value('id');
+        $daftarDepartemenDinasKesehatan = Departemen::where(function ($query) use ($dinkesId) {
+            $query->where('unit_kerja_id', $dinkesId)->orWhereNull('unit_kerja_id');
+        })
             ->orderBy('nama')
             ->get(['id', 'nama']);
 

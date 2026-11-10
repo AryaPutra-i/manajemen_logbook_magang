@@ -37,6 +37,33 @@ class UpdateUserRequest extends FormRequest
             ? ['Puskesmas']
             : ['Dinas_Kesehatan', 'Puskesmas'];
 
+        $currentJenis = $this->route('user')->unitKerja?->jenis
+            ?? ($this->route('user')->departemen_id !== null && $this->route('user')->departemen?->unit_kerja_id === null ? 'Dinas_Kesehatan' : null);
+        $jenisUnitKerja = $this->input('jenisUnitKerja', $currentJenis);
+        $isPuskesmas = $jenisUnitKerja === 'Puskesmas';
+        $isDinasKesehatan = $jenisUnitKerja === 'Dinas_Kesehatan';
+
+        $requiresDepartemen = $role === UserRole::MahasiswaMagang->value
+            || ($role === UserRole::PembimbingLapangan->value && $isDinasKesehatan);
+
+        $departemenRule = Rule::exists('departemens', 'nama');
+        if ($isDinasKesehatan) {
+            $dinkesId = UnitKerja::where('jenis', 'Dinas_Kesehatan')->value('id');
+            $departemenRule->where(function ($query) use ($dinkesId) {
+                $query->where('unit_kerja_id', $dinkesId)->orWhereNull('unit_kerja_id');
+            });
+        } else {
+            $departemenRule->where(function ($query) use ($jenisUnitKerja) {
+                $unitKerjaName = $this->input('namaUnitKerja', $this->route('user')->unitKerja?->nama);
+                $query->whereIn(
+                    'unit_kerja_id',
+                    UnitKerja::where('nama', $unitKerjaName)
+                        ->where('jenis', $jenisUnitKerja)
+                        ->select('id')
+                );
+            });
+        }
+
         return [
             'role' => ['nullable', new Enum(UserRole::class)],
             'nama' => ['required', 'string', 'max:255'],
@@ -50,29 +77,17 @@ class UpdateUserRequest extends FormRequest
                 'nullable',
                 'string',
                 'max:255',
-                Rule::requiredIf($requiresPlacement),
+                Rule::requiredIf($requiresPlacement && $isPuskesmas),
                 Rule::exists('unit_kerjas', 'nama')->where(
                     fn ($query) => $query->where('jenis', $this->input('jenisUnitKerja'))
                 ),
             ],
             'namaDepartemen' => [
                 'nullable',
+                Rule::requiredIf($requiresDepartemen),
                 'string',
                 'max:255',
-                Rule::exists('departemens', 'nama')->where(function ($query) {
-                    $unitKerjaName = $this->input('namaUnitKerja', $this->route('user')->unitKerja?->nama);
-                    $jenisUnitKerja = $this->input(
-                        'jenisUnitKerja',
-                        $this->route('user')->unitKerja?->jenis
-                    );
-
-                    $query->whereIn(
-                        'unit_kerja_id',
-                        UnitKerja::where('nama', $unitKerjaName)
-                            ->where('jenis', $jenisUnitKerja)
-                            ->select('id')
-                    );
-                }),
+                $departemenRule,
             ],
             'nip' => ['nullable', 'string', 'size:18', Rule::unique('users')->ignore($userId)],
             'nik' => ['nullable', 'string', 'size:16', Rule::unique('users')->ignore($userId)],
@@ -91,6 +106,7 @@ class UpdateUserRequest extends FormRequest
             'jenisUnitKerja.in' => 'Jenis unit kerja tidak sesuai dengan role',
             'namaUnitKerja.required' => 'Unit kerja wajib diisi untuk role ini',
             'namaUnitKerja.exists' => 'Unit kerja tidak sesuai dengan jenis yang dipilih',
+            'namaDepartemen.required' => 'Departemen wajib dipilih',
             'namaDepartemen.exists' => 'Departemen tidak sesuai dengan unit kerja yang dipilih',
             'nip' => 'NIP tidak valid',
             'nip.unique' => 'NIP sudah terdaftar',

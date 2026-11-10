@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Departemen;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\UnitKerja;
 use Illuminate\Database\Seeder;
 
 class DepartemenSeeder extends Seeder
@@ -23,8 +23,13 @@ class DepartemenSeeder extends Seeder
             'UPTD Instalasi Farmasi',
         ];
 
+        $dinkes = UnitKerja::where('jenis', 'Dinas_Kesehatan')->first();
+
         foreach ($daftarDepartemen as $nama) {
-            Departemen::firstOrCreate(['nama' => $nama]);
+            Departemen::updateOrCreate(
+                ['nama' => $nama],
+                ['unit_kerja_id' => $dinkes?->id]
+            );
         }
     }
 }
