@@ -1,8 +1,10 @@
 <?php
 
-use Illuminate\Http\Request;
+use App\Http\Controllers\Api\UserStatisticController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
+Route::prefix('statistics/pemagang')->controller(UserStatisticController::class)->group(function () {
+    Route::get('/', 'totalPemagang');
+    Route::get('/dokter', 'totalDokterMagang');
+    Route::get('/mahasiswa', 'totalMahasiswaMagang');
+});
