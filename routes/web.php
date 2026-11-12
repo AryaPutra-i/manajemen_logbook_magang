@@ -8,6 +8,7 @@ use App\Http\Controllers\ManajemenAkunController;
 use App\Http\Controllers\ManajemenLogbookController;
 use App\Http\Controllers\VerifikasiUbahDataController;
 use App\Http\Controllers\VerifikasiUbahDataMahasiswaController;
+use App\Http\Controllers\manajemenDepartemen;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['guest'])->group(function () {
@@ -42,6 +43,14 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/manajemen-akun/upload-accounts', [ManajemenAkunController::class, 'import'])->name('akun.import');
         Route::get('/manajemen-logbook/generate-rekapan', [LogDokterController::class, 'generateRekapan'])->name('logbook.generate-rekapan');
         Route::get('/manajemen-logbook-mahasiswa/generate-rekapan', [LogMahasiswaController::class, 'generateRekapanMahasiswa'])->name('logbook.mahasiswa.generate-rekapan');
+
+        Route::get('/manajemen-departemen', [\App\Http\Controllers\ManajemenDepartemen::class,'index'])->name('manajemen-departemen.index');
+        Route::get('/manajemen-departemen/tambah-departemen', [\App\Http\Controllers\ManajemenDepartemen::class,'create'])->name('manajemen-departemen.create');
+        Route::get('/manajemen-departemen/{id}/edit-departemen', [\App\Http\Controllers\ManajemenDepartemen::class,'edit'])->name('manajemen-departemen.edit');
+        Route::put('/manajemen-departemen/{id}', [\App\Http\Controllers\ManajemenDepartemen::class,'update'])->name('manajemen-departemen.update');
+        Route::delete('/manajemen-departemen/{id}', [\App\Http\Controllers\ManajemenDepartemen::class,'destroy'])->name('manajemen-departemen.destroy');
+        Route::get('/manajemen-departemen/{id}/detail-departemen', [\App\Http\Controllers\ManajemenDepartemen::class,'show'])->name('manajemen-departemen.show');
+        Route::post('/manajemen-departemen', [\App\Http\Controllers\ManajemenDepartemen::class,'store'])->name('manajemen-departemen.store');
 
         Route::get('/manajemen-logbook/kategori-pelayanan-kesehatan', [ManajemenLogbookController::class, 'kategoriPelayananKesehatan'])->name('logbook.kategori.index');
         Route::post('/manajemen-logbook/kategori-pelayanan-kesehatan', [ManajemenLogbookController::class, 'storeKategori'])->name('logbook.kategori.store');

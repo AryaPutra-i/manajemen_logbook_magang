@@ -262,7 +262,7 @@
                     || (role === 'pembimbing_lapangan' && unitType === 'Dinas_Kesehatan');
                 document.querySelector('#departemenLabel').textContent = role === 'pembimbing_lapangan'
                     && unitType === 'Puskesmas'
-                    ? 'Departemen (opsional)'
+                    ? 'Departemen'
                     : 'Departemen';
             }
 

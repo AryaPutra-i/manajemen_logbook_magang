@@ -1,54 +1,60 @@
 <?php
 
 namespace App\Services;
+
+use App\Models\Departemen;
 use App\Models\UnitKerja;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
 class ManajemenDepartemen
 {
-    /**
-     * Create a new class instance.
-     */
-    public function createUnitKerja(array $data): UnitKerja
+    public function getPageData(int $perPage = 10): LengthAwarePaginator
     {
-        return DB::transaction(function () use ($data) {
-            $unitKerja = UnitKerja::create([
-                'nama' => $data['nama'],
-                'alamat' => $data['alamat'],
-                'kepala_upt' => $data['kepala_upt'],
-                'nomor_telepon' => $data['nomor_telepon'],
-                'email' => $data['email'],
-                'kode_puskesmas' => $data['kode_puskesmas'],
-                'jenis' => $data['jenis'],
-            ]);
-            return $unitKerja;
-        });
-        return $unitKerja;
-    }
-
-    public function updateUnitKerja(array $data, UnitKerja $unitKerja): UnitKerja {
-
-        $unitKerjaUpdate->update([
-            'nama' => $data['nama'],
-            'alamat' => $data['alamat'],
-            'kepala_upt' => $data['kepala_upt'],
-            'nomor_telepon' => $data['nomor_telepon'],
-            'email' => $data['email'],
-            'kode_puskesmas' => $data['kode_puskesmas'],
-            'jenis' => $data['jenis']
-        ]);
-
-        return $unitKerjaUpdate;
-    }
-
-    public function getPageData(int $perPage = 10): LengthAwarePaginator {
-        return UnitKerja::with(['nama', 'alamat', 'kepala_upt', 'nomor_telepon', 'email', 'kode_puskesmas', 'jenis'])
+        return Departemen::with('unitKerja')
             ->latest()
             ->paginate($perPage);
     }
 
-    public function deleteUnitKerja(int $id): bool {
-        $unitKerja = UnitKerja::findOrFail($id);
-        return $unitKerja->delete();
+    public function getUnitKerjaData()
+    {
+        return UnitKerja::orderBy('nama')->get();
     }
+
+    public function createDepartemen(array $data): Departemen
+    {
+        return DB::transaction(function () use ($data) {
+            return Departemen::create([
+                'nama' => $data['nama'],
+                'unit_kerja_id' => $data['unit_kerja_id'],
+            ]);
+        });
+    }
+
+    public function getDepartemenById(int $id): Departemen
+    {
+        return Departemen::with('unitKerja')->findOrFail($id);
+    }
+
+    public function updateDepartemen(
+        Departemen $departemen,
+        array $data
+    ): Departemen {
+        return DB::transaction(function () use ($departemen, $data) {
+
+            $departemen->update([
+                'nama' => $data['nama'],
+                'unit_kerja_id' => $data['unit_kerja_id'],
+            ]);
+
+            return $departemen;
+        });
+    }
+
+    public function deleteDepartemen(Departemen $departemen): bool
+    {
+        return $departemen->delete();
+    }
+
+    
 }
