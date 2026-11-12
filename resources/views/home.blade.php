@@ -17,6 +17,23 @@
             </div>
         </a>
 
+        <a class="col" href="{{ route('manajemen-departemen.index') }}" style="text-decoration: none;">
+            <div class="card w-100">
+                <div class="row g-0">
+                    <div class="col-xl-4">
+                        <img src="{{ asset('images/Manajemen-departemen.jpg') }}" class="card-img-top object-fit-cover"
+                            style="height: 200px;" alt="...">
+                    </div>
+                    <div class="col-xl-8">
+                        <div class="card-body py-4">
+                            <h4 class="card-title">Manajemen Departemen</h4>
+                            <p class="card-text">Kelola departemen Anda</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </a>
+
         <a class="col" href="{{ route('logbook.index') }}" style="text-decoration: none;">
             <div class="card w-100">
                 <div class="row g-0">
@@ -33,7 +50,6 @@
                 </div>
             </div>
         </a>
-
         @if (request()->user()->role === 'admin')
             <a class="col" href="{{ route('password.index') }}" style="text-decoration: none">
                 <div class="card w-100">
