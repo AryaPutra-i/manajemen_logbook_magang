@@ -17,7 +17,7 @@ class UserSeeder extends Seeder
         $dinkesId = UnitKerja::where('jenis', 'Dinas_Kesehatan')->value('id');
 
         User::factory()->create([
-            'username' => 'admin_dkk_2',
+            'username' => 'dinkes_administrator',
             'password' => 'password123',
             'role' => 'admin',
             'nip' => null,
@@ -30,7 +30,7 @@ class UserSeeder extends Seeder
         ]);
 
         User::factory()->create([
-            'username' => 'dokter.magang_2',
+            'username' => 'dokter.magang',
             'password' => 'password123',
             'role' => 'dokter_magang',
             'nip' => null,
@@ -44,7 +44,7 @@ class UserSeeder extends Seeder
         ]);
 
         User::factory()->create([
-            'username' => 'pembimbing.lapangan_2',
+            'username' => 'pembimbing.lapangan',
             'password' => 'password123',
             'role' => 'pembimbing_lapangan',
             'nip' => fake()->regexify('[0-9]{18}'),
@@ -57,7 +57,7 @@ class UserSeeder extends Seeder
         ]);
 
         User::factory()->create([
-            'username' => 'mahasiswa.magang_2',
+            'username' => 'mahasiswa.magang',
             'password' => 'password123',
             'role' => 'mahasiswa_magang',
             'nip' => null,
@@ -70,7 +70,7 @@ class UserSeeder extends Seeder
 
         ]);
         User::factory()->create([
-            'username' => 'pembimbing.lapangan.com',
+            'username' => 'pembimbing.lapangan.id',
             'password' => 'password123',
             'role' => 'pembimbing_lapangan',
             'nip' => fake()->regexify('[0-9]{18}'),

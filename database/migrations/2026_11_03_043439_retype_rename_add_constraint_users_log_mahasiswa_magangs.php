@@ -12,8 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function(Blueprint $table){
+            $table->foreignId('departemen_id')->nullable()->after('puskesmas_id')->constrained('departemens')->onDelete('cascade');
+
             $table->foreignId('puskesmas_id')->nullable()->change();
-            $table->foreignId('departemen_id')->nullable()->change();
+            // $table->foreignId('departemen_id')->nullable()->change();
         });
 
     }
@@ -25,7 +27,7 @@ return new class extends Migration
     {
         Schema::table('users', function(Blueprint $table){
             $table->foreignId('puskesmas_id')->nullable(false)->change();
-            $table->foreignId('departemen_id')->nullable(false)->change();
+            // $table->foreignId('departemen_id')->nullable(false)->change();
         });
 
     
