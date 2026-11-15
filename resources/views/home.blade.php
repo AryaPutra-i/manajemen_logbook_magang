@@ -17,6 +17,7 @@
             </div>
         </a>
 
+        @if(request()->user()->role === 'admin')
         <a class="col" href="{{ route('manajemen-departemen.index') }}" style="text-decoration: none;">
             <div class="card w-100">
                 <div class="row g-0">
@@ -33,8 +34,9 @@
                 </div>
             </div>
         </a>
+        @endif  
 
-        <a class="col" href="{{ route('logbook.index') }}" style="text-decoration: none;">
+            <a class="col" href="{{ route('logbook.index') }}" style="text-decoration: none;">
             <div class="card w-100">
                 <div class="row g-0">
                     <div class="col-xl-4">
@@ -50,6 +52,8 @@
                 </div>
             </div>
         </a>
+
+
         @if (request()->user()->role === 'admin')
             <a class="col" href="{{ route('password.index') }}" style="text-decoration: none">
                 <div class="card w-100">
