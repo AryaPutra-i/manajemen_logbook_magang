@@ -9,11 +9,39 @@ use Illuminate\Support\Facades\DB;
 
 class ManajemenDepartemen
 {
-    public function getPageData(int $perPage = 10): LengthAwarePaginator
+    /**
+     * @param  array<string, mixed>  $filters
+     */
+    public function getPageData(int $perPage = 10, array $filters = []): LengthAwarePaginator
     {
-        return Departemen::with('unitKerja')
-            ->latest()
-            ->paginate($perPage);
+        $query = Departemen::with('unitKerja');
+
+        if (! empty($filters['tanggal_mulai'])) {
+            $query->whereDate('created_at', '>=', $filters['tanggal_mulai']);
+        }
+
+        if (! empty($filters['tanggal_akhir'])) {
+            $query->whereDate('created_at', '<=', $filters['tanggal_akhir']);
+        }
+
+        if (! empty($filters['unit_kerja'])) {
+            $unitKerja = $filters['unit_kerja'];
+            $query->whereHas('unitKerja', function ($q) use ($unitKerja): void {
+                if (is_numeric($unitKerja)) {
+                    $q->where('id', (int) $unitKerja);
+                } else {
+                    $q->where('nama', 'like', "%{$unitKerja}%");
+                }
+            });
+        }
+
+        if (! empty($filters['nama'])) {
+            $query->where('nama', 'like', "%{$filters['nama']}%");
+        }
+
+        return $query->latest()
+            ->paginate($perPage)
+            ->withQueryString();
     }
 
     public function getUnitKerjaData()

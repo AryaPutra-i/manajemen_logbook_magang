@@ -23,6 +23,7 @@ class DesktopSideNavbar extends Component
             case 'admin':
                 $this->navLinks = [
                     ['icon' => 'bi-person-circle', 'level' => 1, 'label' => 'Manajemen Akun', 'href' => route('akun.menu')],
+                    ['icon' => 'bi-building', 'level' => 1, 'label' => 'Manajemen Departemen', 'href' => route('manajemen-departemen.index')],
                     ['icon' => 'bi-book', 'level' => 1, 'label' => 'Manajemen Logbook', 'href' => route('logbook.index')],
                     ['icon' => 'bi-key', 'level' => 1, 'label' => 'Ganti Password', 'href' => route('password.index')],
                 ];

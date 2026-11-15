@@ -22,6 +22,78 @@
             </div>
         @endif
 
+         <div>
+                   
+            <p class="mb-0 p-2 fw-bold"
+                style="background-color: #283618; color: #FEFAE0;">
+                Filter
+            </p>
+
+            <form method="GET"
+                action="{{ route('manajemen-departemen.index') }}"
+                style="background-color: #606C38;"
+                class="p-3">
+
+                <label style="color: #FEFAE0;"
+                    class="fw-bold form-label"
+                    for="tanggalMulaiPembuatanDepartemen">
+                    Tanggal Pembuatan Departemen
+                </label>
+
+                <div class="input-group">
+                    <input class="form-control"
+                        type="date"
+                        name="tanggalMulaiPembuatanDepartemen"
+                        id="tanggalMulaiPembuatanDepartemen"
+                        value="{{ request('tanggalMulaiPembuatanDepartemen') }}">
+
+                    <input class="form-control ms-2"
+                        type="date"
+                        name="tanggalAkhirPembuatanDepartemen"
+                        id="tanggalAkhirPembuatanDepartemen"
+                        value="{{ request('tanggalAkhirPembuatanDepartemen') }}">
+                </div>
+
+                <label style="color: #FEFAE0;"
+                    class="fw-bold mt-3 form-label"
+                    for="filterUnitKerja">
+                    Unit Kerja
+                </label>
+
+                <input class="form-control"
+                    list="unitKerjaDatalist"
+                    type="text"
+                    name="unit_kerja"
+                    id="filterUnitKerja"
+                    placeholder="Pilih unit kerja"
+                    value="{{ request('unit_kerja') ?? (is_array(request('unit_kerjas')) ? request('unit_kerjas')[0] : request('unit_kerjas')) }}">
+
+                <datalist id="unitKerjaDatalist">
+                    @foreach (($unitKerjas ?? []) as $unitkerja)
+                        <option value="{{ $unitkerja->nama }}">
+                            {{ $unitkerja->nama }}
+                        </option>
+                    @endforeach
+                </datalist>
+
+                <div class="d-flex align-items-center gap-2 mt-4">
+                    <button class="btn btn-primary"
+                        type="submit"
+                        id="filterButton">
+                        Terapkan Filter
+                    </button>
+
+                    @if (request()->filled('tanggalMulaiPembuatanDepartemen') || request()->filled('tanggalAkhirPembuatanDepartemen') || request()->filled('unit_kerja') || request()->filled('unit_kerjas'))
+                        <a href="{{ route('manajemen-departemen.index') }}"
+                            class="btn btn-outline-light">
+                            Reset Filter
+                        </a>
+                    @endif
+                </div>
+
+            </form>
+        </div>
+
         {{-- Header dan tombol tambah --}}
         <div class="d-flex justify-content-between align-items-center">
             <div>

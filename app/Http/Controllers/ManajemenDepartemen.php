@@ -19,12 +19,27 @@ class ManajemenDepartemen extends Controller
 
     public function index(Request $request)
     {
-        $perPage = $request->input('per_page', 10);
+        $perPage = (int) $request->input('per_page', 10);
+
+        $unitKerjaInput = $request->input('unit_kerja');
+        if ($unitKerjaInput === null && $request->has('unit_kerjas')) {
+            $unitKerjasParam = $request->input('unit_kerjas');
+            $unitKerjaInput = is_array($unitKerjasParam) ? ($unitKerjasParam[0] ?? null) : $unitKerjasParam;
+        }
+
+        $filters = [
+            'tanggal_mulai' => $request->input('tanggalMulaiPembuatanDepartemen') ?: $request->input('tanggal_mulai'),
+            'tanggal_akhir' => $request->input('tanggalAkhirPembuatanDepartemen') ?: $request->input('tanggal_akhir'),
+            'unit_kerja' => $unitKerjaInput,
+        ];
 
         $departemens = $this->manajemenDepartemenService
-            ->getPageData($perPage);
+            ->getPageData($perPage, $filters);
 
-        return view('manajemen-departemen', compact('departemens'));
+        $unitKerjas = $this->manajemenDepartemenService
+            ->getUnitKerjaData();
+
+        return view('manajemen-departemen', compact('departemens', 'unitKerjas'));
     }
 
     public function create()
