@@ -132,7 +132,7 @@ class UpdateUserRequest extends FormRequest
                 Rule::requiredIf($requiresPlacement && $isPuskesmas),
                 Rule::exists('unit_kerjas', 'nama')->where(function ($query) use ($isUnitAdmin) {
                     if ($isUnitAdmin) {
-                        $query->where('id', $this->user()->unit_kerja_id);
+                        $query->whereKey($this->user()->unit_kerja_id);
 
                         return;
                     }

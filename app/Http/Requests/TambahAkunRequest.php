@@ -29,20 +29,20 @@ class TambahAkunRequest extends FormRequest
     {
         $actor = $this->user();
 
-        if ($actor?->role === UserRole::AdminUnitKerja->value && $actor->unit_kerja_id !== null) {
-            $unitKerja = UnitKerja::query()->find($actor->unit_kerja_id);
-
-            if ($unitKerja !== null) {
-                $this->merge([
-                    'jenisUnitKerja' => 'Puskesmas',
-                    'namaUnitKerja' => $unitKerja->nama,
-                ]);
-            }
-        } elseif (! $this->has('jenisUnitKerja') || empty($this->input('jenisUnitKerja'))) {
-            $this->merge([
-                'jenisUnitKerja' => 'Puskesmas',
-            ]);
+        if ($actor?->role !== UserRole::AdminUnitKerja->value || $actor->unit_kerja_id === null) {
+            return;
         }
+
+        $unitKerja = UnitKerja::query()->find($actor->unit_kerja_id);
+
+        if ($unitKerja === null) {
+            return;
+        }
+
+        $this->merge([
+            'jenisUnitKerja' => $unitKerja->jenis,
+            'namaUnitKerja' => $unitKerja->nama,
+        ]);
     }
 
     /**
@@ -53,51 +53,78 @@ class TambahAkunRequest extends FormRequest
     public function rules(): array
     {
         $role = $this->input('role');
-        $allowedUnitTypes = ['Puskesmas'];
+        $requiresPlacement = in_array($role, [
+            UserRole::AdminUnitKerja->value,
+            UserRole::DokterMagang->value,
+            UserRole::PembimbingLapangan->value,
+            UserRole::MahasiswaMagang->value,
+        ], true);
+        $allowedUnitTypes = $role === UserRole::DokterMagang->value
+            ? ['Puskesmas']
+            : ['Puskesmas', 'Dinas_Kesehatan'];
         $isUnitAdmin = $this->user()?->role === UserRole::AdminUnitKerja->value;
 
-        $requiresDepartemen = $role === UserRole::MahasiswaMagang->value;
+        $jenisUnitKerja = $this->input('jenisUnitKerja');
+        $isPuskesmas = $jenisUnitKerja === 'Puskesmas';
+        $isDinasKesehatan = $jenisUnitKerja === 'Dinas_Kesehatan';
+
+        $requiresDepartemen = $role === UserRole::MahasiswaMagang->value
+            || ($role === UserRole::PembimbingLapangan->value && $isDinasKesehatan);
 
         $departemenRule = Rule::exists('departemens', 'nama');
         if ($isUnitAdmin) {
             $departemenRule->where('unit_kerja_id', $this->user()->unit_kerja_id);
+        } elseif ($isDinasKesehatan) {
+            $dinkesId = UnitKerja::where('jenis', 'Dinas_Kesehatan')->value('id');
+            $departemenRule->where(function ($query) use ($dinkesId) {
+                $query->where('unit_kerja_id', $dinkesId)->orWhereNull('unit_kerja_id');
+            });
         } else {
             $departemenRule->where(function ($query) {
                 $query->whereIn(
                     'unit_kerja_id',
                     UnitKerja::where('nama', $this->input('namaUnitKerja'))
-                        ->where('jenis', 'Puskesmas')
+                        ->where('jenis', $this->input('jenisUnitKerja'))
                         ->select('id')
                 );
             });
         }
 
-        $allowedRoles = [
-            UserRole::DokterMagang->value,
-            UserRole::PembimbingLapangan->value,
-            UserRole::MahasiswaMagang->value,
-        ];
+        $allowedRoles = $isUnitAdmin
+            ? [
+                UserRole::DokterMagang->value,
+                UserRole::PembimbingLapangan->value,
+                UserRole::MahasiswaMagang->value,
+            ]
+            : [
+                UserRole::AdminUnitKerja->value,
+                UserRole::DokterMagang->value,
+                UserRole::PembimbingLapangan->value,
+                UserRole::MahasiswaMagang->value,
+            ];
 
         return [
             'role' => ['required', Rule::in($allowedRoles)],
             'nama' => ['required', 'string', 'max:255'],
             'jenisUnitKerja' => [
-                'required',
+                'nullable',
                 'string',
+                Rule::requiredIf($requiresPlacement),
                 Rule::in($allowedUnitTypes),
             ],
             'namaUnitKerja' => [
-                'required',
+                'nullable',
                 'string',
                 'max:255',
+                Rule::requiredIf($requiresPlacement && $isPuskesmas),
                 Rule::exists('unit_kerjas', 'nama')->where(function ($query) use ($isUnitAdmin) {
                     if ($isUnitAdmin) {
-                        $query->where('id', $this->user()->unit_kerja_id);
+                        $query->whereKey($this->user()->unit_kerja_id);
 
                         return;
                     }
 
-                    $query->where('jenis', 'Puskesmas');
+                    $query->where('jenis', $this->input('jenisUnitKerja'));
                 }),
             ],
             'namaDepartemen' => [
@@ -117,13 +144,17 @@ class TambahAkunRequest extends FormRequest
 
     public function messages(): array
     {
+        $isUnitAdmin = $this->user()?->role === UserRole::AdminUnitKerja->value;
+
         return [
             'role.required' => 'Role wajib dipilih',
-            'role.in' => 'Role yang dapat ditambahkan hanya dokter magang, pembimbing lapangan, atau mahasiswa magang',
+            'role.in' => $isUnitAdmin
+                ? 'Admin unit kerja hanya diperbolehkan menambah dokter magang, pembimbing lapangan, atau mahasiswa magang'
+                : 'Role yang dipilih tidak dapat ditambahkan',
             'role' => 'Role tidak valid',
             'nama' => 'Nama tidak valid',
             'jenisUnitKerja.required' => 'Jenis unit kerja wajib dipilih untuk role ini',
-            'jenisUnitKerja.in' => 'Jenis unit kerja hanya bisa puskesmas',
+            'jenisUnitKerja.in' => 'Jenis unit kerja tidak sesuai dengan role',
             'namaUnitKerja.required' => 'Unit kerja wajib diisi untuk role ini',
             'namaUnitKerja.exists' => 'Unit kerja tidak sesuai dengan jenis yang dipilih',
             'namaDepartemen.required' => 'Departemen wajib dipilih',

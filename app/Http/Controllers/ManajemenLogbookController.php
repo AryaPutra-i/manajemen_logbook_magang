@@ -27,12 +27,7 @@ class ManajemenLogbookController extends Controller
                 ? LogDokterMagang::with(['unitKerja', 'departemen', 'dokterMagang'])->where('unit_kerja_id', $user->unit_kerja_id)->get()
                 : collect();
             $daftarLogMahasiswaMagang = $user->unit_kerja_id
-                ? LogMahasiswaMagang::with(['unitKerja', 'departemen', 'mahasiswaMagang'])
-                    ->where(function ($query) use ($user): void {
-                        $query->where('unit_kerja_id', $user->unit_kerja_id)
-                            ->orWhereHas('departemen', fn ($q) => $q->where('unit_kerja_id', $user->unit_kerja_id));
-                    })
-                    ->get()
+                ? LogMahasiswaMagang::with(['unitKerja', 'departemen', 'mahasiswaMagang'])->where('unit_kerja_id', $user->unit_kerja_id)->get()
                 : collect();
         } elseif ($user->role === 'dokter_magang') {
             $daftarLogDokterMagang = LogDokterMagang::with(['unitKerja', 'departemen', 'dokterMagang'])->where('dokter_magang_id', $user->id)->get();

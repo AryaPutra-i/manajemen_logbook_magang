@@ -54,8 +54,7 @@ class ManajemenAkunController extends Controller
                 $unitKerja->jenis = 'Puskesmas';
             }
         });
-        $daftarUnitKerja = $daftarUnitKerja->filter(fn (UnitKerja $unitKerja): bool => $unitKerja->jenis === 'Puskesmas')->values();
-        $daftarDepartemenDinasKesehatan = collect();
+        $daftarDepartemenDinasKesehatan = $this->daftarDepartemenDinasKesehatanFor($authUser);
 
         return view('tambah-akun', compact('daftarUnitKerja', 'daftarDepartemenDinasKesehatan'));
     }
@@ -125,8 +124,12 @@ class ManajemenAkunController extends Controller
         $this->abortIfUnitAdminWithoutUnit($authUser);
         $validated = $request->validated();
 
-        if (in_array($validated['role'], [UserRole::Admin->value, UserRole::AdminUnitKerja->value], true)) {
-            return back()->withErrors(['status' => 'Menambah akun dengan role ini tidak diperbolehkan']);
+        if ($validated['role'] === UserRole::Admin->value) {
+            return back()->withErrors(['status' => 'Menambah akun dengan role admin tidak diperbolehkan']);
+        }
+
+        if ($authUser->role !== UserRole::Admin->value && $validated['role'] === UserRole::AdminUnitKerja->value) {
+            return back()->withErrors(['status' => 'Hanya super admin yang dapat menambahkan admin unit kerja']);
         }
 
         $username = User::generateUniqueUsername($validated['nama']);
@@ -135,9 +138,11 @@ class ManajemenAkunController extends Controller
 
         if ($isUnitAdmin) {
             $unitKerjaId = $authUser->unit_kerja_id;
-        } elseif (in_array($validated['role'], [UserRole::DokterMagang->value, UserRole::PembimbingLapangan->value, UserRole::MahasiswaMagang->value], true)) {
+        } elseif (in_array($validated['role'], [UserRole::DokterMagang->value, UserRole::PembimbingLapangan->value, UserRole::MahasiswaMagang->value, UserRole::AdminUnitKerja->value], true)) {
             $jenisUnitKerja = $validated['jenisUnitKerja'] ?? null;
-            if ($jenisUnitKerja === 'Puskesmas') {
+            if ($jenisUnitKerja === 'Dinas_Kesehatan') {
+                $unitKerjaId = UnitKerja::where('jenis', 'Dinas_Kesehatan')->value('id');
+            } elseif ($jenisUnitKerja === 'Puskesmas') {
                 $unitKerjaId = UnitKerja::where('nama', $validated['namaUnitKerja'] ?? null)->where('jenis', 'Puskesmas')->value('id');
             }
         }
@@ -360,7 +365,7 @@ class ManajemenAkunController extends Controller
     private function daftarDepartemenDinasKesehatanFor(User $actor): Collection
     {
         if ($actor->role === UserRole::AdminUnitKerja->value) {
-            $jenis = UnitKerja::query()->where('id', $actor->unit_kerja_id)->value('jenis');
+            $jenis = UnitKerja::query()->whereKey($actor->unit_kerja_id)->value('jenis');
 
             if ($jenis !== 'Dinas_Kesehatan') {
                 return collect();
