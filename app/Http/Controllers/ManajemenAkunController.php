@@ -11,9 +11,11 @@ use App\Models\RiwayatProfilDokterMagang;
 use App\Models\RiwayatProfilMahasiswaMagang;
 use App\Models\UnitKerja;
 use App\Models\User;
+use App\UserRole;
 use DB;
 use Hash;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Facades\Excel;
 use Maatwebsite\Excel\Validators\ValidationException;
 
@@ -23,27 +25,36 @@ class ManajemenAkunController extends Controller
     {
         $user = request()->user();
 
-        if ($user->role === 'admin') {
-            return view('manajemen-akun', ['users' => User::all()]);
+        if ($user->role === UserRole::Admin->value) {
+            $users = User::all();
+        } elseif ($user->role === UserRole::AdminUnitKerja->value) {
+            $this->abortIfUnitAdminWithoutUnit($user);
+            $users = User::query()
+                ->where('unit_kerja_id', $user->unit_kerja_id)
+                ->where('role', '!=', UserRole::Admin->value)
+                ->get();
         } else {
             return view('manajemen-akun-menu', compact('user'));
         }
+
+        return view('manajemen-akun', compact('users'));
     }
 
     public function create()
     {
-        $daftarUnitKerja = UnitKerja::with('departemens')->get(['id', 'nama', 'jenis', 'created_at']);
+        $authUser = request()->user();
+        $this->abortIfUnitAdminWithoutUnit($authUser);
+
+        $daftarUnitKerja = $authUser->role === UserRole::AdminUnitKerja->value
+            ? UnitKerja::with('departemens')->where('id', $authUser->unit_kerja_id)->get(['id', 'nama', 'jenis', 'created_at'])
+            : UnitKerja::with('departemens')->get(['id', 'nama', 'jenis', 'created_at']);
+
         $daftarUnitKerja->each(function (UnitKerja $unitKerja): void {
             if ($unitKerja->jenis === 'Dinas_Kesehatan' && $unitKerja->created_at === null) {
                 $unitKerja->jenis = 'Puskesmas';
             }
         });
-        $dinkesId = UnitKerja::where('jenis', 'Dinas_Kesehatan')->value('id');
-        $daftarDepartemenDinasKesehatan = Departemen::where(function ($query) use ($dinkesId) {
-            $query->where('unit_kerja_id', $dinkesId)->orWhereNull('unit_kerja_id');
-        })
-            ->orderBy('nama')
-            ->get(['id', 'nama']);
+        $daftarDepartemenDinasKesehatan = $this->daftarDepartemenDinasKesehatanFor($authUser);
 
         return view('tambah-akun', compact('daftarUnitKerja', 'daftarDepartemenDinasKesehatan'));
     }
@@ -109,34 +120,36 @@ class ManajemenAkunController extends Controller
 
     public function tambahAkun(TambahAkunRequest $request)
     {
+        $authUser = request()->user();
+        $this->abortIfUnitAdminWithoutUnit($authUser);
         $validated = $request->validated();
 
-        if ($validated['role'] === 'admin') {
+        if ($validated['role'] === UserRole::Admin->value) {
             return back()->withErrors(['status' => 'Menambah akun dengan role admin tidak diperbolehkan']);
         }
 
-        $username = User::generateUniqueUsername($validated['nama']);
-        $jenisUnitKerja = $validated['jenisUnitKerja'] ?? null;
-        $unitKerjaId = null;
+        if ($authUser->role !== UserRole::Admin->value && $validated['role'] === UserRole::AdminUnitKerja->value) {
+            return back()->withErrors(['status' => 'Hanya super admin yang dapat menambahkan admin unit kerja']);
+        }
 
-        if (in_array($validated['role'], ['dokter_magang', 'pembimbing_lapangan', 'mahasiswa_magang'], true)) {
+        $username = User::generateUniqueUsername($validated['nama']);
+        $unitKerjaId = null;
+        $isUnitAdmin = $authUser->role === UserRole::AdminUnitKerja->value;
+
+        if ($isUnitAdmin) {
+            $unitKerjaId = $authUser->unit_kerja_id;
+        } elseif (in_array($validated['role'], [UserRole::DokterMagang->value, UserRole::PembimbingLapangan->value, UserRole::MahasiswaMagang->value, UserRole::AdminUnitKerja->value], true)) {
+            $jenisUnitKerja = $validated['jenisUnitKerja'] ?? null;
             if ($jenisUnitKerja === 'Dinas_Kesehatan') {
                 $unitKerjaId = UnitKerja::where('jenis', 'Dinas_Kesehatan')->value('id');
             } elseif ($jenisUnitKerja === 'Puskesmas') {
-                $unitKerjaId = UnitKerja::where('nama', $validated['namaUnitKerja'] ?? null)
-                    ->where('jenis', 'Puskesmas')
-                    ->value('id');
+                $unitKerjaId = UnitKerja::where('nama', $validated['namaUnitKerja'] ?? null)->where('jenis', 'Puskesmas')->value('id');
             }
         }
 
-        $departemenId = null;
-        if ($validated['role'] !== 'dokter_magang' && ! blank($validated['namaDepartemen'] ?? null)) {
-            $departemenId = Departemen::where('nama', $validated['namaDepartemen'])
-                ->where(function ($query) use ($unitKerjaId) {
-                    $query->where('unit_kerja_id', $unitKerjaId)->orWhereNull('unit_kerja_id');
-                })
-                ->value('id');
-        }
+        $departemenId = $validated['role'] === UserRole::DokterMagang->value
+            ? null
+            : $this->resolveDepartemenId($validated['namaDepartemen'] ?? null, $unitKerjaId, $isUnitAdmin);
 
         unset($validated['jenisUnitKerja'], $validated['namaUnitKerja'], $validated['namaDepartemen']);
         User::create([
@@ -152,41 +165,54 @@ class ManajemenAkunController extends Controller
 
     public function update(UpdateUserRequest $request, User $user)
     {
+        $authUser = request()->user();
+        $this->abortUnlessUserInUnitScope($authUser, $user, 'mengubah akun ini');
+
         $validated = $request->validated();
         $role = $validated['role'] ?? $user->role;
 
-        $namaUnitKerja = array_key_exists('namaUnitKerja', $validated)
-            ? $validated['namaUnitKerja']
-            : $user->unitKerja?->nama;
+        if ($authUser->role === UserRole::AdminUnitKerja->value && $role === UserRole::Admin->value) {
+            return back()->withErrors(['status' => 'Menetapkan role admin tidak diperbolehkan']);
+        }
 
-        $namaDepartemen = $role === 'dokter_magang'
-            ? null
-            : (array_key_exists('namaDepartemen', $validated)
-                ? $validated['namaDepartemen']
-                : $user->departemen?->nama);
-        $jenisUnitKerja = array_key_exists('jenisUnitKerja', $validated)
-            ? $validated['jenisUnitKerja']
-            : ($user->unitKerja?->jenis ?? ($user->departemen_id !== null && $user->departemen?->unit_kerja_id === null ? 'Dinas_Kesehatan' : null));
+        if ($authUser->role !== UserRole::Admin->value && ($validated['role'] ?? null) === UserRole::AdminUnitKerja->value) {
+            return back()->withErrors(['status' => 'Hanya super admin yang dapat menetapkan role admin unit kerja']);
+        }
 
         $unitKerjaId = null;
-        if (in_array($role, ['dokter_magang', 'pembimbing_lapangan', 'mahasiswa_magang'], true)) {
-            if ($jenisUnitKerja === 'Dinas_Kesehatan') {
-                $unitKerjaId = UnitKerja::where('jenis', 'Dinas_Kesehatan')->value('id');
-            } elseif ($jenisUnitKerja === 'Puskesmas') {
-                $unitKerjaId = UnitKerja::where('nama', $namaUnitKerja)
-                    ->where('jenis', 'Puskesmas')
-                    ->value('id');
+        $isUnitAdmin = $authUser->role === UserRole::AdminUnitKerja->value;
+        if ($isUnitAdmin) {
+            $unitKerjaId = $authUser->unit_kerja_id;
+            $namaDepartemen = $role === 'dokter_magang'
+                ? null
+                : ($validated['namaDepartemen'] ?? $user->departemen?->nama);
+        } else {
+            $namaUnitKerja = array_key_exists('namaUnitKerja', $validated)
+                ? $validated['namaUnitKerja']
+                : $user->unitKerja?->nama;
+
+            $namaDepartemen = $role === 'dokter_magang'
+                ? null
+                : (array_key_exists('namaDepartemen', $validated)
+                    ? $validated['namaDepartemen']
+                    : $user->departemen?->nama);
+
+            $jenisUnitKerja = array_key_exists('jenisUnitKerja', $validated)
+                ? $validated['jenisUnitKerja']
+                : ($user->unitKerja?->jenis ?? ($user->departemen_id !== null && $user->departemen?->unit_kerja_id === null ? 'Dinas_Kesehatan' : null));
+
+            if (in_array($role, [UserRole::DokterMagang->value, UserRole::PembimbingLapangan->value, UserRole::MahasiswaMagang->value, UserRole::AdminUnitKerja->value], true)) {
+                if ($jenisUnitKerja === 'Dinas_Kesehatan') {
+                    $unitKerjaId = UnitKerja::where('jenis', 'Dinas_Kesehatan')->value('id');
+                } elseif ($jenisUnitKerja === 'Puskesmas') {
+                    $unitKerjaId = UnitKerja::where('nama', $namaUnitKerja)->where('jenis', 'Puskesmas')->value('id');
+                }
             }
         }
 
-        $departemenId = null;
-        if ($role !== 'dokter_magang' && ! blank($namaDepartemen)) {
-            $departemenId = Departemen::where('nama', $namaDepartemen)
-                ->where(function ($query) use ($unitKerjaId) {
-                    $query->where('unit_kerja_id', $unitKerjaId)->orWhereNull('unit_kerja_id');
-                })
-                ->value('id');
-        }
+        $departemenId = $role === UserRole::DokterMagang->value
+            ? null
+            : $this->resolveDepartemenId($namaDepartemen, $unitKerjaId, $isUnitAdmin);
 
         unset($validated['jenisUnitKerja'], $validated['namaUnitKerja'], $validated['namaDepartemen']);
         $updatedData = [...$validated, 'unit_kerja_id' => $unitKerjaId, 'departemen_id' => $departemenId];
@@ -202,11 +228,20 @@ class ManajemenAkunController extends Controller
 
     public function destroy(string $id)
     {
+        $authUser = request()->user();
         $user = User::findOrFail($id);
 
-        if ($user->role === 'admin' || $user->id === request()->user()->id) {
-            return back()->withErrors(['status' => 'User dengan role admin tidak dapat dihapus']);
+        if ($user->role === UserRole::Admin->value) {
+            return back()->withErrors(['status' => 'Akun dengan role admin tidak dapat dihapus']);
         }
+        if ($user->role === UserRole::AdminUnitKerja->value && $authUser->role !== UserRole::Admin->value) {
+            return back()->withErrors(['status' => 'Hanya super admin yang dapat menghapus akun admin unit kerja']);
+        }
+        if ($user->id === $authUser->id) {
+            return back()->withErrors(['status' => 'Anda tidak dapat menghapus akun Anda sendiri']);
+        }
+
+        $this->abortUnlessUserInUnitScope($authUser, $user, 'menghapus akun ini');
 
         $username = $user->username;
         $user->delete();
@@ -216,37 +251,43 @@ class ManajemenAkunController extends Controller
 
     public function edit(User $user)
     {
-        $daftarUnitKerja = UnitKerja::with('departemens')->get(['id', 'nama', 'jenis', 'created_at']);
+        $authUser = request()->user();
+
+        $this->abortUnlessUserInUnitScope($authUser, $user, 'mengedit akun ini');
+
+        if ($authUser->role === UserRole::AdminUnitKerja->value) {
+            $daftarUnitKerja = UnitKerja::with('departemens')->where('id', $authUser->unit_kerja_id)->get(['id', 'nama', 'jenis', 'created_at']);
+        } else {
+            $daftarUnitKerja = UnitKerja::with('departemens')->get(['id', 'nama', 'jenis', 'created_at']);
+        }
+
         $daftarUnitKerja->each(function (UnitKerja $unitKerja): void {
             if ($unitKerja->jenis === 'Dinas_Kesehatan' && $unitKerja->created_at === null) {
                 $unitKerja->jenis = 'Puskesmas';
             }
         });
         $user->setRelation('unitKerja', $daftarUnitKerja->firstWhere('id', $user->unit_kerja_id));
-        $dinkesId = UnitKerja::where('jenis', 'Dinas_Kesehatan')->value('id');
-        $daftarDepartemenDinasKesehatan = Departemen::where(function ($query) use ($dinkesId) {
-            $query->where('unit_kerja_id', $dinkesId)->orWhereNull('unit_kerja_id');
-        })
-            ->orderBy('nama')
-            ->get(['id', 'nama']);
+        $daftarDepartemenDinasKesehatan = $this->daftarDepartemenDinasKesehatanFor($authUser);
 
         return view('edit-akun', compact('user', 'daftarUnitKerja', 'daftarDepartemenDinasKesehatan'));
     }
 
     public function import(Request $request)
     {
+        $this->abortIfUnitAdminWithoutUnit($request->user());
+
         $request->validate([
             'accounts_xlsx' => ['required', 'file', 'mimes:xlsx', 'max:2048'],
         ]);
 
         try {
-            Excel::import(new UsersImport, $request->file('accounts_xlsx'));
+            Excel::import(new UsersImport($request->user()), $request->file('accounts_xlsx'));
         } catch (ValidationException $e) {
             $failures = $e->failures();
-            $status = 'Terdapat kesalahan pada file di baris '.$failures[0]->row().': ';
+            $status = 'Terdapat kesalahan pada file di baris ' . $failures[0]->row() . ': ';
 
             foreach ($failures as $failure) {
-                $status .= $failure->errors()[0].'; ';
+                $status .= $failure->errors()[0] . '; ';
             }
 
             $status .= 'File tidak akan diimpor hingga seluruh kesalahan diperbaiki.';
@@ -259,7 +300,11 @@ class ManajemenAkunController extends Controller
 
     public function resetPasswordById(User $user)
     {
-        if (request()->user()->role !== 'admin') {
+        $authUser = request()->user();
+
+        $this->abortUnlessUserInUnitScope($authUser, $user, 'me-reset password akun ini');
+
+        if (! in_array($authUser->role, [UserRole::Admin->value, UserRole::AdminUnitKerja->value], true)) {
             abort(403);
         }
 
@@ -269,5 +314,76 @@ class ManajemenAkunController extends Controller
         DB::table('sessions')->where('user_id', $user->id)->delete();
 
         return redirect()->route('akun.menu')->with('status', "Password untuk user dengan username $user->username berhasil di-reset, sesi aktif user tersebut telah diakhiri");
+    }
+
+    private function abortIfUnitAdminWithoutUnit(User $actor): void
+    {
+        if ($actor->role === UserRole::AdminUnitKerja->value && $actor->unit_kerja_id === null) {
+            abort(403, 'Akun admin unit kerja harus memiliki unit kerja.');
+        }
+    }
+
+    private function abortUnlessUserInUnitScope(User $actor, User $target, string $action): void
+    {
+        if ($actor->role !== UserRole::AdminUnitKerja->value) {
+            return;
+        }
+
+        $this->abortIfUnitAdminWithoutUnit($actor);
+
+        $sameUnit = $target->unit_kerja_id !== null
+            && (int) $target->unit_kerja_id === (int) $actor->unit_kerja_id;
+
+        if ($target->role === UserRole::Admin->value || ! $sameUnit) {
+            abort(403, 'Anda tidak memiliki akses untuk '.$action);
+        }
+
+        if ($target->role === UserRole::AdminUnitKerja->value) {
+            abort(403, 'Hanya super admin yang memiliki wewenang untuk '.$action.' dengan role admin unit kerja');
+        }
+    }
+
+    private function resolveDepartemenId(?string $namaDepartemen, ?int $unitKerjaId, bool $onlyWithinUnit): ?int
+    {
+        if (blank($namaDepartemen)) {
+            return null;
+        }
+
+        $query = Departemen::query()->where('nama', $namaDepartemen);
+
+        if ($onlyWithinUnit) {
+            $query->where('unit_kerja_id', $unitKerjaId);
+        } else {
+            $query->where(function ($departemenQuery) use ($unitKerjaId): void {
+                $departemenQuery->where('unit_kerja_id', $unitKerjaId)->orWhereNull('unit_kerja_id');
+            });
+        }
+
+        return $query->value('id');
+    }
+
+    private function daftarDepartemenDinasKesehatanFor(User $actor): Collection
+    {
+        if ($actor->role === UserRole::AdminUnitKerja->value) {
+            $jenis = UnitKerja::query()->whereKey($actor->unit_kerja_id)->value('jenis');
+
+            if ($jenis !== 'Dinas_Kesehatan') {
+                return collect();
+            }
+
+            return Departemen::query()
+                ->where('unit_kerja_id', $actor->unit_kerja_id)
+                ->orderBy('nama')
+                ->get(['id', 'nama']);
+        }
+
+        $dinkesId = UnitKerja::query()->where('jenis', 'Dinas_Kesehatan')->value('id');
+
+        return Departemen::query()
+            ->where(function ($query) use ($dinkesId): void {
+                $query->where('unit_kerja_id', $dinkesId)->orWhereNull('unit_kerja_id');
+            })
+            ->orderBy('nama')
+            ->get(['id', 'nama']);
     }
 }

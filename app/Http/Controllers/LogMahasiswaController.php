@@ -62,6 +62,11 @@ class LogMahasiswaController extends Controller
                 $this->isAccessibleByPembimbing($logMagang, $user),
                 403
             );
+        } elseif ($user->role === 'admin_unit_kerja') {
+            abort_unless(
+                $user->unit_kerja_id !== null && $logMagang->unit_kerja_id === $user->unit_kerja_id,
+                403
+            );
         }
 
         return view('edit-log-mahasiswa', ['logMahasiswa' => $logMagang, 'user' => $user]);
@@ -155,7 +160,11 @@ class LogMahasiswaController extends Controller
         $logMagang = LogMahasiswaMagang::findOrFail($id);
         $user = request()->user();
 
-        if ($user->role !== 'admin' && $logMagang->mahasiswa_magang_id !== $user->id) {
+        if ($user->role === 'admin_unit_kerja') {
+            if ($logMagang->unit_kerja_id !== $user->unit_kerja_id) {
+                abort(403, 'Anda tidak memiliki hak akses untuk menghapus log ini');
+            }
+        } elseif ($user->role !== 'admin' && $logMagang->mahasiswa_magang_id !== $user->id) {
             return back()->withErrors(['status' => 'Anda tidak dapat menghapus log milik orang lain']);
         }
 
@@ -184,6 +193,12 @@ class LogMahasiswaController extends Controller
         $user = User::where('username', $validated['username'])->firstOrFail();
 
         abort_unless($user->role === 'mahasiswa_magang', 404);
+
+        if (request()->user()->role === 'admin_unit_kerja') {
+            if ($user->unit_kerja_id !== request()->user()->unit_kerja_id) {
+                abort(403, 'Anda hanya dapat mengunduh rekapan logbook di unit kerja Anda');
+            }
+        }
 
         $tanggalLogMulai = Carbon::createFromFormat('Y-m-d', $validated['tanggalLogMulai'])->startOfDay();
 

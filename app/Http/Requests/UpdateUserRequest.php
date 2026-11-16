@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\UnitKerja;
+use App\Models\User;
 use App\UserRole;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -16,7 +17,41 @@ class UpdateUserRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true;
+        $actor = $this->user();
+        $target = $this->route('user');
+
+        if ($actor?->role === UserRole::Admin->value) {
+            return true;
+        }
+
+        if ($actor?->role !== UserRole::AdminUnitKerja->value || ! $target instanceof User) {
+            return false;
+        }
+
+        return $actor->unit_kerja_id !== null
+            && ! in_array($target->role, [UserRole::Admin->value, UserRole::AdminUnitKerja->value], true)
+            && $target->unit_kerja_id !== null
+            && (int) $target->unit_kerja_id === (int) $actor->unit_kerja_id;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $actor = $this->user();
+
+        if ($actor?->role !== UserRole::AdminUnitKerja->value || $actor->unit_kerja_id === null) {
+            return;
+        }
+
+        $unitKerja = UnitKerja::query()->find($actor->unit_kerja_id);
+
+        if ($unitKerja === null) {
+            return;
+        }
+
+        $this->merge([
+            'jenisUnitKerja' => $unitKerja->jenis,
+            'namaUnitKerja' => $unitKerja->nama,
+        ]);
     }
 
     /**
@@ -29,10 +64,25 @@ class UpdateUserRequest extends FormRequest
         $userId = $this->route('user')->id;
         $role = $this->input('role', $this->route('user')->role);
         $requiresPlacement = in_array($role, [
+            UserRole::AdminUnitKerja->value,
             UserRole::DokterMagang->value,
             UserRole::PembimbingLapangan->value,
             UserRole::MahasiswaMagang->value,
         ], true);
+        $isUnitAdmin = $this->user()?->role === UserRole::AdminUnitKerja->value;
+        $allowedRoles = $isUnitAdmin
+            ? [
+                UserRole::DokterMagang->value,
+                UserRole::PembimbingLapangan->value,
+                UserRole::MahasiswaMagang->value,
+            ]
+            : [
+                UserRole::AdminUnitKerja->value,
+                UserRole::DokterMagang->value,
+                UserRole::PembimbingLapangan->value,
+                UserRole::MahasiswaMagang->value,
+            ];
+
         $allowedUnitTypes = $role === UserRole::DokterMagang->value
             ? ['Puskesmas']
             : ['Dinas_Kesehatan', 'Puskesmas'];
@@ -47,7 +97,9 @@ class UpdateUserRequest extends FormRequest
             || ($role === UserRole::PembimbingLapangan->value && $isDinasKesehatan);
 
         $departemenRule = Rule::exists('departemens', 'nama');
-        if ($isDinasKesehatan) {
+        if ($isUnitAdmin) {
+            $departemenRule->where('unit_kerja_id', $this->user()->unit_kerja_id);
+        } elseif ($isDinasKesehatan) {
             $dinkesId = UnitKerja::where('jenis', 'Dinas_Kesehatan')->value('id');
             $departemenRule->where(function ($query) use ($dinkesId) {
                 $query->where('unit_kerja_id', $dinkesId)->orWhereNull('unit_kerja_id');
@@ -65,7 +117,7 @@ class UpdateUserRequest extends FormRequest
         }
 
         return [
-            'role' => ['nullable', new Enum(UserRole::class)],
+            'role' => ['nullable', Rule::in($allowedRoles)],
             'nama' => ['required', 'string', 'max:255'],
             'jenisUnitKerja' => [
                 'nullable',
@@ -78,9 +130,15 @@ class UpdateUserRequest extends FormRequest
                 'string',
                 'max:255',
                 Rule::requiredIf($requiresPlacement && $isPuskesmas),
-                Rule::exists('unit_kerjas', 'nama')->where(
-                    fn ($query) => $query->where('jenis', $this->input('jenisUnitKerja'))
-                ),
+                Rule::exists('unit_kerjas', 'nama')->where(function ($query) use ($isUnitAdmin) {
+                    if ($isUnitAdmin) {
+                        $query->whereKey($this->user()->unit_kerja_id);
+
+                        return;
+                    }
+
+                    $query->where('jenis', $this->input('jenisUnitKerja'));
+                }),
             ],
             'namaDepartemen' => [
                 'nullable',
@@ -99,7 +157,12 @@ class UpdateUserRequest extends FormRequest
 
     public function messages(): array
     {
+        $isUnitAdmin = $this->user()?->role === UserRole::AdminUnitKerja->value;
+
         return [
+            'role.in' => $isUnitAdmin
+                ? 'Admin unit kerja hanya diperbolehkan menetapkan role dokter magang, pembimbing lapangan, atau mahasiswa magang'
+                : 'Role yang dipilih tidak dapat ditetapkan',
             'role' => 'Role tidak valid',
             'nama' => 'Nama tidak valid',
             'jenisUnitKerja.required' => 'Jenis unit kerja wajib dipilih untuk role ini',

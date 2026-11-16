@@ -15,6 +15,13 @@ use Maatwebsite\Excel\Concerns\WithValidation;
 
 class UsersImport implements SkipsEmptyRows, ToModel, WithHeadingRow, WithValidation
 {
+    protected ?User $authUser;
+
+    public function __construct(?User $authUser = null)
+    {
+        $this->authUser = $authUser;
+    }
+
     public function model(array $row): ?Model
     {
         $role = $row['role'];
@@ -32,7 +39,7 @@ class UsersImport implements SkipsEmptyRows, ToModel, WithHeadingRow, WithValida
             'nama' => $row['nama_lengkap'],
             'role' => $role,
             'unit_kerja_id' => $unitKerjaId,
-            'departemen_id' => $departemenId,
+            'departemen_id' => $role === 'dokter_magang' ? null : $departemenId,
             'nip' => $isMagang ? null : ($row['nip_pembimbing_lapangan'] ?? null),
             'nik' => $isMagang ? ($row['nik_magang'] ?? null) : null,
             'nim' => $isMagang ? ($row['nim_magang'] ?? null) : null,
@@ -61,6 +68,10 @@ class UsersImport implements SkipsEmptyRows, ToModel, WithHeadingRow, WithValida
         $validator->after(function ($validator): void {
             $data = $validator->getData();
             $unitKerjaId = UnitKerja::where('nama', $data['unit_kerja'] ?? null)->value('id');
+
+            if ($this->authUser?->role === 'admin_unit_kerja' && ($this->authUser->unit_kerja_id === null || $unitKerjaId !== $this->authUser->unit_kerja_id)) {
+                $validator->errors()->add('unit_kerja', 'Anda hanya diperbolehkan mengimpor akun untuk unit kerja Anda sendiri');
+            }
 
             if (
                 $unitKerjaId === null ||

@@ -16,7 +16,33 @@ class TambahAkunRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true;
+        $actor = $this->user();
+
+        if ($actor?->role === UserRole::Admin->value) {
+            return true;
+        }
+
+        return $actor?->role === UserRole::AdminUnitKerja->value && $actor->unit_kerja_id !== null;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $actor = $this->user();
+
+        if ($actor?->role !== UserRole::AdminUnitKerja->value || $actor->unit_kerja_id === null) {
+            return;
+        }
+
+        $unitKerja = UnitKerja::query()->find($actor->unit_kerja_id);
+
+        if ($unitKerja === null) {
+            return;
+        }
+
+        $this->merge([
+            'jenisUnitKerja' => $unitKerja->jenis,
+            'namaUnitKerja' => $unitKerja->nama,
+        ]);
     }
 
     /**
@@ -28,13 +54,15 @@ class TambahAkunRequest extends FormRequest
     {
         $role = $this->input('role');
         $requiresPlacement = in_array($role, [
+            UserRole::AdminUnitKerja->value,
             UserRole::DokterMagang->value,
             UserRole::PembimbingLapangan->value,
             UserRole::MahasiswaMagang->value,
         ], true);
         $allowedUnitTypes = $role === UserRole::DokterMagang->value
             ? ['Puskesmas']
-            : ['Dinas_Kesehatan', 'Puskesmas'];
+            : ['Puskesmas', 'Dinas_Kesehatan'];
+        $isUnitAdmin = $this->user()?->role === UserRole::AdminUnitKerja->value;
 
         $jenisUnitKerja = $this->input('jenisUnitKerja');
         $isPuskesmas = $jenisUnitKerja === 'Puskesmas';
@@ -44,7 +72,9 @@ class TambahAkunRequest extends FormRequest
             || ($role === UserRole::PembimbingLapangan->value && $isDinasKesehatan);
 
         $departemenRule = Rule::exists('departemens', 'nama');
-        if ($isDinasKesehatan) {
+        if ($isUnitAdmin) {
+            $departemenRule->where('unit_kerja_id', $this->user()->unit_kerja_id);
+        } elseif ($isDinasKesehatan) {
             $dinkesId = UnitKerja::where('jenis', 'Dinas_Kesehatan')->value('id');
             $departemenRule->where(function ($query) use ($dinkesId) {
                 $query->where('unit_kerja_id', $dinkesId)->orWhereNull('unit_kerja_id');
@@ -60,8 +90,21 @@ class TambahAkunRequest extends FormRequest
             });
         }
 
+        $allowedRoles = $isUnitAdmin
+            ? [
+                UserRole::DokterMagang->value,
+                UserRole::PembimbingLapangan->value,
+                UserRole::MahasiswaMagang->value,
+            ]
+            : [
+                UserRole::AdminUnitKerja->value,
+                UserRole::DokterMagang->value,
+                UserRole::PembimbingLapangan->value,
+                UserRole::MahasiswaMagang->value,
+            ];
+
         return [
-            'role' => ['required', new Enum(UserRole::class)],
+            'role' => ['required', Rule::in($allowedRoles)],
             'nama' => ['required', 'string', 'max:255'],
             'jenisUnitKerja' => [
                 'nullable',
@@ -74,9 +117,15 @@ class TambahAkunRequest extends FormRequest
                 'string',
                 'max:255',
                 Rule::requiredIf($requiresPlacement && $isPuskesmas),
-                Rule::exists('unit_kerjas', 'nama')->where(
-                    fn ($query) => $query->where('jenis', $this->input('jenisUnitKerja'))
-                ),
+                Rule::exists('unit_kerjas', 'nama')->where(function ($query) use ($isUnitAdmin) {
+                    if ($isUnitAdmin) {
+                        $query->whereKey($this->user()->unit_kerja_id);
+
+                        return;
+                    }
+
+                    $query->where('jenis', $this->input('jenisUnitKerja'));
+                }),
             ],
             'namaDepartemen' => [
                 'nullable',
@@ -95,7 +144,13 @@ class TambahAkunRequest extends FormRequest
 
     public function messages(): array
     {
+        $isUnitAdmin = $this->user()?->role === UserRole::AdminUnitKerja->value;
+
         return [
+            'role.required' => 'Role wajib dipilih',
+            'role.in' => $isUnitAdmin
+                ? 'Admin unit kerja hanya diperbolehkan menambah dokter magang, pembimbing lapangan, atau mahasiswa magang'
+                : 'Role yang dipilih tidak dapat ditambahkan',
             'role' => 'Role tidak valid',
             'nama' => 'Nama tidak valid',
             'jenisUnitKerja.required' => 'Jenis unit kerja wajib dipilih untuk role ini',
