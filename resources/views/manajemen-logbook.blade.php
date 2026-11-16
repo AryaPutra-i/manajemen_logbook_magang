@@ -68,6 +68,24 @@
                                     <option value="{{ $usernameMahasiswa }}">
                                 @endforeach
                             </datalist>
+                        @elseif ($user->role === 'admin_unit_kerja')
+                            <label style="color: #FEFAE0;" class="fw-bold mt-3" for="usernameDokter">Username dokter</label>
+                            <input class="form-control" list="usernameDokterDatalist" type="text" id="usernameDokter"
+                                placeholder="Pilih username">
+                            <datalist id="usernameDokterDatalist">
+                                @foreach ($daftarLogDokterMagang->pluck('dokterMagang.username')->filter()->unique() as $usernameDokter)
+                                    <option value="{{ $usernameDokter }}">
+                                @endforeach
+                            </datalist>
+
+                            <label style="color: #FEFAE0;" class="fw-bold mt-3" for="usernameMahasiswa">Username mahasiswa</label>
+                            <input class="form-control" list="usernameMahasiswaDatalist" type="text" id="usernameMahasiswa"
+                                placeholder="Pilih username">
+                            <datalist id="usernameMahasiswaDatalist">
+                                @foreach ($daftarLogMahasiswaMagang->pluck('mahasiswaMagang.username')->filter()->unique() as $usernameMahasiswa)
+                                    <option value="{{ $usernameMahasiswa }}">
+                                @endforeach
+                            </datalist>
                         @endif
 
                         <button class="btn btn-primary mt-4" id="filterButton" type="button">Terapkan Filter</button>
@@ -77,16 +95,18 @@
 
             <div class="col-xxl-9 d-flex flex-column gap-4">
                 <div class="d-flex flex-wrap justify-content-end justify-content-xxl-start gap-2">
-                    @if ($user->role === 'admin')
+                    @if (in_array($user->role, ['admin', 'admin_unit_kerja'], true))
                         <button onclick="handleGenerateRekapanDokter()" class="btn btn-success" type="button">
                             <i class="bi bi-file-earmark-spreadsheet-fill text-white"></i> Rekap dokter
                         </button>
                         <button onclick="handleGenerateRekapanMahasiswa()" class="btn btn-success" type="button">
                             <i class="bi bi-file-earmark-spreadsheet-fill text-white"></i> Rekap mahasiswa
                         </button>
-                        <a href="{{ route('logbook.kategori.index') }}" class="btn btn-primary">
-                            <i class="bi bi-tags text-white"></i> Kategori Pelayanan Kesehatan
-                        </a>
+                        @if ($user->role === 'admin')
+                            <a href="{{ route('logbook.kategori.index') }}" class="btn btn-primary">
+                                <i class="bi bi-tags text-white"></i> Kategori Pelayanan Kesehatan
+                            </a>
+                        @endif
                     @elseif ($user->role === 'dokter_magang')
                         <a href="{{ route('logbook.create') }}" class="btn btn-primary">
                             <i class="bi bi-plus-square text-white"></i> Tambah Log
@@ -98,7 +118,7 @@
                     @endif
                 </div>
 
-                @if (in_array($user->role, ['admin', 'dokter_magang', 'pembimbing_lapangan'], true))
+                @if (in_array($user->role, ['admin', 'admin_unit_kerja', 'dokter_magang', 'pembimbing_lapangan'], true))
                     <div>
                         <h2 class="h4">Log Dokter Magang</h2>
                         <div class="table-responsive">
@@ -153,7 +173,7 @@
                                                     class="btn btn-warning text-white">
                                                     <i class="bi bi-eye text-white"></i> Detail Log
                                                 </a>
-                                                @if (in_array($user->role, ['admin', 'dokter_magang'], true))
+                                                @if (in_array($user->role, ['admin', 'admin_unit_kerja', 'dokter_magang'], true))
                                                     <form class="d-inline" method="POST"
                                                         action="{{ route('logbook.destroy', ['id' => $logMagang->id]) }}">
                                                         @csrf
@@ -187,7 +207,7 @@
                     </div>
                 @endif
 
-                @if (in_array($user->role, ['admin', 'mahasiswa_magang', 'pembimbing_lapangan'], true))
+                @if (in_array($user->role, ['admin', 'admin_unit_kerja', 'mahasiswa_magang', 'pembimbing_lapangan'], true))
                     <div>
                         <h2 class="h4">Log Mahasiswa Magang</h2>
                         <div class="table-responsive">
@@ -252,13 +272,13 @@
                                                         @endif
                                                     </a>
                                                 @endif
-                                                @if (in_array($user->role, ['admin', 'mahasiswa_magang'], true))
+                                                @if (in_array($user->role, ['admin', 'admin_unit_kerja', 'mahasiswa_magang'], true))
                                                     <form class="d-inline" method="POST"
                                                         action="{{ route('logbook.mahasiswa.destroy', ['id' => $logMahasiswa->id]) }}">
                                                         @csrf
                                                         @method('DELETE')
                                                         <button class="btn btn-danger" type="submit"
-                                                            @disabled($logMahasiswa->status_verifikasi === 'selesai')>
+                                                            @disabled($logMahasiswa->status_verifikasi === 'selesai' && $user->role === 'mahasiswa_magang')>
                                                             <i class="bi bi-trash-fill text-white"></i> Hapus
                                                         </button>
                                                     </form>
@@ -367,10 +387,13 @@
 
             document.querySelector('#filterButton').addEventListener('click', function() {
                 @if ($user->role === 'admin')
-                    dokterTable?.column(1).search(document.querySelector('#unitKerja').value);
-                    dokterTable?.column(2).search(document.querySelector('#usernameDokter').value);
-                    mahasiswaTable?.column(1).search(document.querySelector('#unitMahasiswa').value);
-                    mahasiswaTable?.column(2).search(document.querySelector('#usernameMahasiswa').value);
+                    dokterTable?.column(1).search(document.querySelector('#unitKerja')?.value ?? '');
+                    dokterTable?.column(2).search(document.querySelector('#usernameDokter')?.value ?? '');
+                    mahasiswaTable?.column(1).search(document.querySelector('#unitMahasiswa')?.value ?? '');
+                    mahasiswaTable?.column(2).search(document.querySelector('#usernameMahasiswa')?.value ?? '');
+                @elseif ($user->role === 'admin_unit_kerja')
+                    dokterTable?.column(2).search(document.querySelector('#usernameDokter')?.value ?? '');
+                    mahasiswaTable?.column(2).search(document.querySelector('#usernameMahasiswa')?.value ?? '');
                 @endif
                 dokterTable?.draw();
                 mahasiswaTable?.draw();

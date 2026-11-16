@@ -35,12 +35,15 @@
                                 <option value="dokter_magang" @selected(old('role') === 'dokter_magang')>Dokter Magang</option>
                                 <option value="pembimbing_lapangan" @selected(old('role') === 'pembimbing_lapangan')>Pembimbing Lapangan</option>
                                 <option value="mahasiswa_magang" @selected(old('role') === 'mahasiswa_magang')>Mahasiswa Magang</option>
+                                @if (request()->user()->role === 'admin')
+                                    <option value="admin_unit_kerja" @selected(old('role') === 'admin_unit_kerja')>Admin Unit Kerja</option>
+                                @endif
                             </select>
                         </div>
                     </div>
                 </div>
 
-                <div class="row align-items-center g-2 mb-3 {{ in_array(old('role'), ['dokter_magang', 'pembimbing_lapangan', 'mahasiswa_magang'], true) ? '' : 'd-none' }}"
+                <div class="row align-items-center g-2 mb-3 {{ in_array(old('role'), ['dokter_magang', 'pembimbing_lapangan', 'mahasiswa_magang', 'admin_unit_kerja'], true) ? '' : 'd-none' }}"
                     data-role-group="penempatan">
                     <label class="col-lg-3 col-form-label mb-1 my-lg-auto" for="jenisUnitKerja">Jenis Unit Kerja</label>
                     <div class="col-lg-9">
@@ -52,7 +55,7 @@
                     </div>
                 </div>
 
-                <div class="row align-items-center g-2 mb-3 {{ in_array(old('role'), ['dokter_magang', 'pembimbing_lapangan', 'mahasiswa_magang'], true) ? '' : 'd-none' }}"
+                <div class="row align-items-center g-2 mb-3 {{ in_array(old('role'), ['dokter_magang', 'pembimbing_lapangan', 'mahasiswa_magang', 'admin_unit_kerja'], true) ? '' : 'd-none' }}"
                     data-role-group="unit-kerja">
                     <label class="col-lg-3 col-form-label mb-1 my-lg-auto" for="namaUnitKerja">
                         <span id="unitKerjaLabel">Unit Kerja</span>
