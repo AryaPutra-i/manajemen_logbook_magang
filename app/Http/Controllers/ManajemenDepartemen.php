@@ -33,31 +33,45 @@ class ManajemenDepartemen extends Controller
             'unit_kerja' => $unitKerjaInput,
         ];
 
+        $user = $request->user();
+        if ($user->role === 'admin_unit_kerja') {
+            $filters['unit_kerja_id'] = $user->unit_kerja_id;
+            $unitKerjas = $this->manajemenDepartemenService
+                ->getUnitKerjaData($user->unit_kerja_id);
+        } else {
+            $unitKerjas = $this->manajemenDepartemenService
+                ->getUnitKerjaData();
+        }
+
         $departemens = $this->manajemenDepartemenService
             ->getPageData($perPage, $filters);
-
-        $unitKerjas = $this->manajemenDepartemenService
-            ->getUnitKerjaData();
 
         return view('manajemen-departemen', compact('departemens', 'unitKerjas'));
     }
 
     public function create()
-{
-    $departemen = null;
+    {
+        $departemen = null;
+        $user = request()->user();
+        $unitKerjaId = $user->role === 'admin_unit_kerja' ? $user->unit_kerja_id : null;
 
-    $unitKerjas = $this->manajemenDepartemenService
-        ->getUnitKerjaData();
+        $unitKerjas = $this->manajemenDepartemenService
+            ->getUnitKerjaData($unitKerjaId);
 
-    return view('form-tambah-departemen', compact(
-        'departemen',
-        'unitKerjas'
-    ));
-}
+        return view('form-tambah-departemen', compact(
+            'departemen',
+            'unitKerjas'
+        ));
+    }
 
     public function store(ManajemenDepartemenRequest $request)
     {
         $validData = $request->validated();
+        $user = $request->user();
+
+        if ($user->role === 'admin_unit_kerja') {
+            $validData['unit_kerja_id'] = $user->unit_kerja_id;
+        }
 
         $this->manajemenDepartemenService
             ->createDepartemen($validData);
@@ -68,26 +82,51 @@ class ManajemenDepartemen extends Controller
     }
 
     public function edit($id)
-{
-    $departemen = $this->manajemenDepartemenService
-        ->getDepartemenById($id);
+    {
+        $departemen = $this->manajemenDepartemenService
+            ->getDepartemenById($id);
+        $user = request()->user();
 
-    $unitKerjas = $this->manajemenDepartemenService
-        ->getUnitKerjaData();
+        if ($user->role === 'admin_unit_kerja' && $departemen->unit_kerja_id !== $user->unit_kerja_id) {
+            abort(403, 'Anda tidak memiliki hak akses untuk mengedit departemen ini');
+        }
 
-    return view('form-tambah-departemen', compact(
-        'departemen',
-        'unitKerjas'
-    ));
-}
+        $unitKerjaId = $user->role === 'admin_unit_kerja' ? $user->unit_kerja_id : null;
+        $unitKerjas = $this->manajemenDepartemenService
+            ->getUnitKerjaData($unitKerjaId);
 
+        return view('form-tambah-departemen', compact(
+            'departemen',
+            'unitKerjas'
+        ));
+    }
+
+    public function show($id)
+    {
+        $departemen = $this->manajemenDepartemenService
+            ->getDepartemenById($id);
+        $user = request()->user();
+
+        if ($user->role === 'admin_unit_kerja' && $departemen->unit_kerja_id !== $user->unit_kerja_id) {
+            abort(403, 'Anda tidak memiliki hak akses untuk melihat departemen ini');
+        }
+
+        return view('detail-departemen', compact('departemen'));
+    }
 
     public function update(ManajemenDepartemenRequest $request, $id)
     {
         $validData = $request->validated();
-
         $departemen = $this->manajemenDepartemenService
             ->getDepartemenById($id);
+        $user = $request->user();
+
+        if ($user->role === 'admin_unit_kerja') {
+            if ($departemen->unit_kerja_id !== $user->unit_kerja_id) {
+                abort(403, 'Anda tidak memiliki hak akses untuk mengubah departemen ini');
+            }
+            $validData['unit_kerja_id'] = $user->unit_kerja_id;
+        }
 
         $this->manajemenDepartemenService
             ->updateDepartemen($departemen, $validData);
@@ -97,11 +136,15 @@ class ManajemenDepartemen extends Controller
             ->with('success', 'Departemen berhasil diperbarui.');
     }
 
-
     public function destroy($id)
     {
         $departemen = $this->manajemenDepartemenService
             ->getDepartemenById($id);
+        $user = request()->user();
+
+        if ($user->role === 'admin_unit_kerja' && $departemen->unit_kerja_id !== $user->unit_kerja_id) {
+            abort(403, 'Anda tidak memiliki hak akses untuk menghapus departemen ini');
+        }
 
         $this->manajemenDepartemenService
             ->deleteDepartemen($departemen);

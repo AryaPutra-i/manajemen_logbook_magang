@@ -66,7 +66,7 @@ class LogDokterController extends Controller
         }
 
         if (
-            $user->role === 'pembimbing_lapangan'
+            in_array($user->role, ['pembimbing_lapangan', 'admin_unit_kerja'], true)
             && (
                 $user->unit_kerja_id === null
                 || $logMagang->unit_kerja_id === null
@@ -178,7 +178,11 @@ class LogDokterController extends Controller
         $logMagang = LogDokterMagang::findOrFail($id);
         $user = request()->user();
 
-        if ($user->role !== 'admin' && $logMagang->dokter_magang_id !== $user->id) {
+        if ($user->role === 'admin_unit_kerja') {
+            if ($logMagang->unit_kerja_id !== $user->unit_kerja_id) {
+                abort(403, 'Anda tidak memiliki hak akses untuk menghapus log ini');
+            }
+        } elseif ($user->role !== 'admin' && $logMagang->dokter_magang_id !== $user->id) {
             return back()->withErrors(['status' => 'Anda tidak dapat menghapus log milik orang lain']);
         }
 
@@ -207,6 +211,12 @@ class LogDokterController extends Controller
         $user = User::where('username', $validated['username'])->firstOrFail();
 
         abort_unless($user->role === 'dokter_magang', 404);
+
+        if (request()->user()->role === 'admin_unit_kerja') {
+            if ($user->unit_kerja_id !== request()->user()->unit_kerja_id) {
+                abort(403, 'Anda hanya dapat mengunduh rekapan logbook di unit kerja Anda');
+            }
+        }
 
         $tanggalLogMulai = Carbon::createFromFormat('Y-m-d', $validated['tanggalLogMulai'])->startOfDay();
         $tanggalLogAkhir = Carbon::createFromFormat('Y-m-d', $validated['tanggalLogAkhir'])->endOfDay();

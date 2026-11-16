@@ -22,6 +22,13 @@ class ManajemenLogbookController extends Controller
         if ($user->role === 'admin') {
             $daftarLogDokterMagang = LogDokterMagang::with(['unitKerja', 'departemen', 'dokterMagang'])->get();
             $daftarLogMahasiswaMagang = LogMahasiswaMagang::with(['unitKerja', 'departemen', 'mahasiswaMagang'])->get();
+        } elseif ($user->role === 'admin_unit_kerja') {
+            $daftarLogDokterMagang = $user->unit_kerja_id
+                ? LogDokterMagang::with(['unitKerja', 'departemen', 'dokterMagang'])->where('unit_kerja_id', $user->unit_kerja_id)->get()
+                : collect();
+            $daftarLogMahasiswaMagang = $user->unit_kerja_id
+                ? LogMahasiswaMagang::with(['unitKerja', 'departemen', 'mahasiswaMagang'])->where('unit_kerja_id', $user->unit_kerja_id)->get()
+                : collect();
         } elseif ($user->role === 'dokter_magang') {
             $daftarLogDokterMagang = LogDokterMagang::with(['unitKerja', 'departemen', 'dokterMagang'])->where('dokter_magang_id', $user->id)->get();
         } elseif ($user->role === 'mahasiswa_magang') {

@@ -35,6 +35,10 @@ class ManajemenDepartemen
             });
         }
 
+        if (! empty($filters['unit_kerja_id'])) {
+            $query->where('unit_kerja_id', $filters['unit_kerja_id']);
+        }
+
         if (! empty($filters['nama'])) {
             $query->where('nama', 'like', "%{$filters['nama']}%");
         }
@@ -44,9 +48,11 @@ class ManajemenDepartemen
             ->withQueryString();
     }
 
-    public function getUnitKerjaData()
+    public function getUnitKerjaData(?int $unitKerjaId = null)
     {
-        return UnitKerja::orderBy('nama')->get();
+        return UnitKerja::when($unitKerjaId !== null, fn($q) => $q->where('id', $unitKerjaId))
+            ->orderBy('nama')
+            ->get();
     }
 
     public function createDepartemen(array $data): Departemen
@@ -83,6 +89,4 @@ class ManajemenDepartemen
     {
         return $departemen->delete();
     }
-
-    
 }
