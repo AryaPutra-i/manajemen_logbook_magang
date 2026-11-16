@@ -38,6 +38,7 @@
                             <select onchange="handleSelectRole()" class="form-select" name="role" id="role">
                                 <option value="" disabled>Masukkan role</option>
                                 <option value="admin" @selected(old('role', $user->role) === 'admin')>Admin</option>
+                                <option value="admin_unit_kerja" @selected(old('role', $user->role) === 'admin_unit_kerja')>Admin Unit Kerja</option>
                                 <option value="dokter_magang" @selected(old('role', $user->role) === 'dokter_magang')>Dokter Magang</option>
                                 <option value="pembimbing_lapangan" @selected(old('role', $user->role) === 'pembimbing_lapangan')>Pembimbing Lapangan</option>
                                 <option value="mahasiswa_magang" @selected(old('role', $user->role) === 'mahasiswa_magang')>Mahasiswa Magang</option>
@@ -46,7 +47,7 @@
                     </div>
                 </div>
 
-                <div class="row align-items-center g-2 mb-3 {{ in_array(old('role', $user->role), ['dokter_magang', 'pembimbing_lapangan', 'mahasiswa_magang'], true) ? '' : 'd-none' }}"
+                <div class="row align-items-center g-2 mb-3 {{ in_array(old('role', $user->role), ['admin_unit_kerja', 'dokter_magang', 'pembimbing_lapangan', 'mahasiswa_magang'], true) ? '' : 'd-none' }}"
                     data-role-group="penempatan">
                     <label class="col-lg-3 col-form-label mb-1 my-lg-auto" for="jenisUnitKerja">Jenis Unit Kerja</label>
                     <div class="col-lg-9">
@@ -58,7 +59,7 @@
                     </div>
                 </div>
 
-                <div class="row align-items-center g-2 mb-3 {{ in_array(old('role', $user->role), ['dokter_magang', 'pembimbing_lapangan', 'mahasiswa_magang'], true) ? '' : 'd-none' }}"
+                <div class="row align-items-center g-2 mb-3 {{ in_array(old('role', $user->role), ['admin_unit_kerja', 'dokter_magang', 'pembimbing_lapangan', 'mahasiswa_magang'], true) ? '' : 'd-none' }}"
                     data-role-group="unit-kerja">
                     <label class="col-lg-3 col-form-label mb-1 my-lg-auto" for="namaUnitKerja">
                         <span id="unitKerjaLabel">Unit Kerja</span>
@@ -187,8 +188,9 @@
                 const isDoctor = selectedRole === 'dokter_magang';
                 const isSupervisor = selectedRole === 'pembimbing_lapangan';
                 const isStudent = selectedRole === 'mahasiswa_magang';
+                const isUnitAdmin = selectedRole === 'admin_unit_kerja';
                 const isIntern = isDoctor || isStudent;
-                const requiresPlacement = isIntern || isSupervisor;
+                const requiresPlacement = isIntern || isSupervisor || isUnitAdmin;
                 const isSupportedRole = requiresPlacement;
                 const jenisUnitKerjaInput = document.querySelector('#jenisUnitKerja');
                 const unitKerjaInput = document.querySelector('#namaUnitKerja');
@@ -238,12 +240,13 @@
                 if (selectedUnit?.dataset.jenis && selectedUnit.dataset.jenis !== unitType) {
                     unitKerjaInput.value = '';
                 }
-                const requiresPuskesmas = unitType === 'Puskesmas'
-                    && ['dokter_magang', 'pembimbing_lapangan', 'mahasiswa_magang']
-                        .includes(document.querySelector('#role').value);
-                unitKerjaInput.disabled = !requiresPuskesmas;
-                unitKerjaInput.required = requiresPuskesmas;
-                document.querySelector('[data-role-group="unit-kerja"]').classList.toggle('d-none', !requiresPuskesmas);
+                const role = document.querySelector('#role').value;
+                const requiresUnitKerja = unitType === 'Puskesmas'
+                    && ['admin_unit_kerja', 'dokter_magang', 'pembimbing_lapangan', 'mahasiswa_magang']
+                        .includes(role);
+                unitKerjaInput.disabled = !requiresUnitKerja;
+                unitKerjaInput.required = requiresUnitKerja;
+                document.querySelector('[data-role-group="unit-kerja"]').classList.toggle('d-none', !requiresUnitKerja);
                 document.querySelector('#unitKerjaLabel').textContent = unitType === 'Puskesmas'
                     ? 'Puskesmas'
                     : 'Unit Kerja Dinas Kesehatan';
