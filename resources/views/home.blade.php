@@ -17,7 +17,7 @@
             </div>
         </a>
 
-        @if(in_array(request()->user()->role, ['admin', 'admin_unit_kerja'], true))
+        @if(request()->user()->role === 'admin')
         <a class="col" href="{{ route('manajemen-departemen.index') }}" style="text-decoration: none;">
             <div class="card w-100">
                 <div class="row g-0">
@@ -54,7 +54,7 @@
         </a>
 
 
-        @if (in_array(request()->user()->role, ['admin', 'admin_unit_kerja'], true))
+        @if (request()->user()->role === 'admin')
             <a class="col" href="{{ route('password.index') }}" style="text-decoration: none">
                 <div class="card w-100">
                     <div class="row g-0">

@@ -88,7 +88,6 @@
                                 <td>
                                     {{ match ($user->role) {
                                         'admin' => 'Admin',
-                                        'admin_unit_kerja' => 'Admin Unit Kerja',
                                         'dokter_magang' => 'Dokter Magang',
                                         'mahasiswa_magang' => 'Mahasiswa Magang',
                                         'pembimbing_lapangan' => 'Pembimbing Lapangan',
