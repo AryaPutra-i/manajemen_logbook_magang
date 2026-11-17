@@ -1,4 +1,8 @@
-    <x-home-layout>
+<x-home-layout>
+    @php
+        $isUnitAdmin = request()->user()->role === 'admin_unit_kerja';
+        $adminUnit = $isUnitAdmin ? request()->user()->unitKerja : null;
+    @endphp
     <section class="p-4 w-100 d-flex flex-column gap-3" style="max-width: 768px;">
         @if ($errors->any())
             <div class="alert alert-danger">
@@ -48,9 +52,10 @@
                     <label class="col-lg-3 col-form-label mb-1 my-lg-auto" for="jenisUnitKerja">Jenis Unit Kerja</label>
                     <div class="col-lg-9">
                         <select class="mb-1 mb-lg-3 form-select" name="jenisUnitKerja" id="jenisUnitKerja">
-                            <option value="" disabled @selected(!old('jenisUnitKerja'))>Pilih jenis unit kerja</option>
-                            <option value="Puskesmas" @selected(old('jenisUnitKerja') === 'Puskesmas')>Puskesmas</option>
-                            <option value="Dinas_Kesehatan" @selected(old('jenisUnitKerja') === 'Dinas_Kesehatan')>Dinas Kesehatan</option>
+                            <option value="" disabled @selected(!old('jenisUnitKerja') && !$adminUnit)>Pilih jenis unit kerja</option>
+                            <option value="Puskesmas" @selected(old('jenisUnitKerja', $adminUnit?->jenis) === 'Puskesmas')>Puskesmas</option>
+                            <option value="Dinas_Kesehatan" @selected(old('jenisUnitKerja', $adminUnit?->jenis) === 'Dinas_Kesehatan')>Dinas Kesehatan</option>
+                            
                         </select>
                     </div>
                 </div>
@@ -62,11 +67,11 @@
                     </label>
                     <div class="col-lg-9">
                         <select class="mb-1 mb-lg-3 form-select" name="namaUnitKerja" id="namaUnitKerja">
-                            <option value="" disabled @selected(!old('namaUnitKerja'))>Pilih unit kerja</option>
+                            <option value="" disabled @selected(!old('namaUnitKerja') && !$adminUnit)>Pilih unit kerja</option>
                             @foreach ($daftarUnitKerja as $unitKerja)
                                 <option value="{{ $unitKerja->nama }}" data-unit-kerja-id="{{ $unitKerja->id }}"
                                     data-jenis="{{ $unitKerja->jenis }}"
-                                    @selected(old('jenisUnitKerja') === $unitKerja->jenis && old('namaUnitKerja') === $unitKerja->nama)>
+                                    @selected(old('namaUnitKerja', $adminUnit?->nama) === $unitKerja->nama)>
                                     {{ $unitKerja->nama }}
                                 </option>
                             @endforeach
@@ -174,8 +179,9 @@
                 const isDoctor = selectedRole === 'dokter_magang';
                 const isSupervisor = selectedRole === 'pembimbing_lapangan';
                 const isStudent = selectedRole === 'mahasiswa_magang';
+                const isNewUnitAdmin = selectedRole === 'admin_unit_kerja';
                 const isIntern = isDoctor || isStudent;
-                const requiresPlacement = isDoctor || isSupervisor || isStudent;
+                const requiresPlacement = isDoctor || isSupervisor || isStudent || isNewUnitAdmin;
                 const jenisUnitKerjaInput = document.querySelector('#jenisUnitKerja');
                 const unitKerjaInput = document.querySelector('#namaUnitKerja');
                 const departmentInput = document.querySelector('#namaDepartemen');
@@ -185,9 +191,14 @@
                 jenisUnitKerjaInput.disabled = !requiresPlacement;
                 unitKerjaInput.required = requiresPlacement;
 
-                if (isDoctor) {
-                    jenisUnitKerjaInput.value = 'Puskesmas';
-                }
+                @if ($isUnitAdmin && $adminUnit)
+                    jenisUnitKerjaInput.value = '{{ $adminUnit->jenis }}';
+                    unitKerjaInput.value = '{{ $adminUnit->nama }}';
+                @else
+                    if (isDoctor || isNewUnitAdmin) {
+                        jenisUnitKerjaInput.value = 'Puskesmas';
+                    }
+                @endif
                 jenisUnitKerjaInput.querySelector('option[value="Dinas_Kesehatan"]').hidden = isDoctor;
                 jenisUnitKerjaInput.querySelector('option[value="Dinas_Kesehatan"]').disabled = isDoctor;
                 updateUnitKerjaOptions();
@@ -227,7 +238,7 @@
                     unitKerjaInput.value = '';
                 }
                 const requiresPuskesmas = unitType === 'Puskesmas'
-                    && ['dokter_magang', 'pembimbing_lapangan', 'mahasiswa_magang']
+                    && ['admin_unit_kerja', 'dokter_magang', 'pembimbing_lapangan', 'mahasiswa_magang']
                         .includes(document.querySelector('#role').value);
                 unitKerjaInput.disabled = !requiresPuskesmas;
                 unitKerjaInput.required = requiresPuskesmas;

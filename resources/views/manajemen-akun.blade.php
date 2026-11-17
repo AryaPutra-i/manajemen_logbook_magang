@@ -112,7 +112,7 @@
                                         action="{{ route('akun.destroy', ['id' => $user->id]) }}">
                                         @csrf
                                         @method('DELETE')
-                                        <button class="btn btn-danger" @if ($user->role === 'admin') disabled @endif
+                                        <button class="btn btn-danger" @if ($user->role === 'admin' || $user->id === auth()->id() || ($user->role === 'admin_unit_kerja' && auth()->user()->role !== 'admin')) disabled @endif
                                             type="submit"><i class="bi bi-trash-fill text-white"></i> Hapus</button>
                                     </form>
                                 </td>

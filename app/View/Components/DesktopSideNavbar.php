@@ -33,8 +33,7 @@ class DesktopSideNavbar extends Component
                     ['icon' => 'bi-person-circle', 'level' => 1, 'label' => 'Manajemen Akun', 'href' => route('akun.menu')],
                     ['icon' => 'bi-building', 'level' => 1, 'label' => 'Manajemen Departemen', 'href' => route('manajemen-departemen.index')],
                     ['icon' => 'bi-book', 'level' => 1, 'label' => 'Manajemen Logbook', 'href' => route('logbook.index')],
-                    ['icon' => 'bi-person-vcard', 'level' => 2, 'label' => 'Ubah Data', 'href' => route('akun.ubah-data.edit')],
-                    ['icon' => 'bi-key', 'level' => 2, 'label' => 'Ganti Password', 'href' => route('akun.password.index')],
+                    ['icon' => 'bi-key', 'level' => 1, 'label' => 'Ganti Password', 'href' => route('password.index')],
                 ];
                 break;
             case 'dokter_magang':
