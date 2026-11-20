@@ -13,7 +13,9 @@ return new class extends Migration
     {
         Schema::create('departemens', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('unit_kerja_id')->nullable()->constrained('unit_kerjas')->onDelete('cascade');
             $table->string('nama');
+            $table->unique(['nama', 'unit_kerja_id'], 'departemens_nama_unit_kerja_id_unique');
             $table->timestamps();
         });
     }
