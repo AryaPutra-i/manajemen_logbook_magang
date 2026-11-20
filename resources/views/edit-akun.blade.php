@@ -38,7 +38,6 @@
                             <select onchange="handleSelectRole()" class="form-select" name="role" id="role">
                                 <option value="" disabled>Masukkan role</option>
                                 @if (request()->user()->role === 'admin')
-                                    <option value="admin" @selected(old('role', $user->role) === 'admin')>Admin</option>
                                     <option value="admin_unit_kerja" @selected(old('role', $user->role) === 'admin_unit_kerja')>Admin Unit Kerja</option>
                                 @endif
                                 <option value="dokter_magang" @selected(old('role', $user->role) === 'dokter_magang')>Dokter Magang</option>
@@ -56,7 +55,6 @@
                         <select class="mb-1 mb-lg-3 form-select" name="jenisUnitKerja" id="jenisUnitKerja">
                             <option value="" disabled @selected(!old('jenisUnitKerja', $user->unitKerja?->jenis))>Pilih jenis unit kerja</option>
                             <option value="Puskesmas" @selected(old('jenisUnitKerja', $user->unitKerja?->jenis) === 'Puskesmas')>Puskesmas</option>
-                            <option value="Dinas_Kesehatan" @selected(old('jenisUnitKerja', $user->unitKerja?->jenis) === 'Dinas_Kesehatan')>Dinas Kesehatan</option>
                         </select>
                     </div>
                 </div>

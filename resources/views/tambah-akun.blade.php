@@ -54,7 +54,6 @@
                         <select class="mb-1 mb-lg-3 form-select" name="jenisUnitKerja" id="jenisUnitKerja">
                             <option value="" disabled @selected(!old('jenisUnitKerja') && !$adminUnit)>Pilih jenis unit kerja</option>
                             <option value="Puskesmas" @selected(old('jenisUnitKerja', $adminUnit?->jenis) === 'Puskesmas')>Puskesmas</option>
-                            <option value="Dinas_Kesehatan" @selected(old('jenisUnitKerja', $adminUnit?->jenis) === 'Dinas_Kesehatan')>Dinas Kesehatan</option>
                             
                         </select>
                     </div>

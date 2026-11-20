@@ -201,17 +201,55 @@ class LogMahasiswaController extends Controller
         }
 
         $tanggalLogMulai = Carbon::createFromFormat('Y-m-d', $validated['tanggalLogMulai'])->startOfDay();
-
         $tanggalLogAkhir = Carbon::createFromFormat('Y-m-d', $validated['tanggalLogAkhir'])->endOfDay();
 
         $daftarLog = LogMahasiswaMagang::where('mahasiswa_magang_id', $user->id)
             ->where('status_verifikasi', 'selesai')
             ->whereBetween('tanggal', [$tanggalLogMulai, $tanggalLogAkhir])
+            ->orderBy('tanggal')
             ->get();
 
+        // Rekap: nama_kegiatan => [tanggal => jumlah]
+        $rekap = [];
+        foreach ($daftarLog as $log) {
+            $key = $log->nama_kegiatan;
+            $tgl = $log->tanggal->toDateString();
+            $rekap[$key][$tgl] = ($rekap[$key][$tgl] ?? 0) + 1;
+        }
+
+        // Total kegiatan per tanggal
+        $totalPerTanggal = [];
+        foreach ($daftarLog as $log) {
+            $tgl = $log->tanggal->toDateString();
+            $totalPerTanggal[$tgl] = ($totalPerTanggal[$tgl] ?? 0) + 1;
+        }
+
+        // Grup per bulan (sama seperti rekap dokter)
+        $grupBulan = [];
+        $cursor = $tanggalLogMulai->copy()->startOfMonth();
+        $akhirBulan = $tanggalLogAkhir->copy()->endOfMonth();
+
+        while ($cursor->lte($akhirBulan)) {
+            $days = [];
+            for ($d = 1; $d <= $cursor->daysInMonth; $d++) {
+                $days[] = $cursor->copy()->day($d)->startOfDay();
+            }
+
+            $grupBulan[] = [
+                'key'   => $cursor->format('Y-m'),
+                'label' => mb_strtoupper($cursor->copy()->locale('id')->isoFormat('MMMM YYYY')),
+                'days'  => $days,
+            ];
+
+            $cursor->addMonth()->startOfMonth();
+        }
+
         return view('generate-rekapan-mahasiswa', [
-            'user' => $user,
-            'daftarLog' => $daftarLog,
+            'user'            => $user,
+            'daftarLog'       => $daftarLog,
+            'rekap'           => $rekap,
+            'totalPerTanggal' => $totalPerTanggal,
+            'grupBulan'       => $grupBulan,
             'tanggalLogMulai' => $tanggalLogMulai,
             'tanggalLogAkhir' => $tanggalLogAkhir,
         ]);
