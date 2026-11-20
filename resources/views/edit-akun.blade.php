@@ -1,5 +1,8 @@
 <x-home-layout>
     @php
+        $authUser = request()->user();
+        $isUnitAdmin = $authUser->role === 'admin_unit_kerja';
+        $adminUnit = $isUnitAdmin ? $authUser->unitKerja : null;
         $currentJenis = $user->unitKerja?->jenis ?? ($user->departemen_id !== null && $user->departemen?->unit_kerja_id === null ? 'Dinas_Kesehatan' : null);
     @endphp
     <section class="p-4 w-100 d-flex flex-column gap-3" style="max-width: 768px;">
@@ -37,7 +40,7 @@
                         <div class="mb-3 input-group">
                             <select onchange="handleSelectRole()" class="form-select" name="role" id="role">
                                 <option value="" disabled>Masukkan role</option>
-                                @if (request()->user()->role === 'admin')
+                                @if ($authUser->role === 'admin')
                                     <option value="admin_unit_kerja" @selected(old('role', $user->role) === 'admin_unit_kerja')>Admin Unit Kerja</option>
                                 @endif
                                 <option value="dokter_magang" @selected(old('role', $user->role) === 'dokter_magang')>Dokter Magang</option>
@@ -48,36 +51,52 @@
                     </div>
                 </div>
 
-                <div class="row align-items-center g-2 mb-3 {{ in_array(old('role', $user->role), ['admin_unit_kerja', 'dokter_magang', 'pembimbing_lapangan', 'mahasiswa_magang'], true) ? '' : 'd-none' }}"
+                {{-- Jenis Unit Kerja: disembunyikan & dikunci jika login sebagai admin_unit_kerja --}}
+                <div class="row align-items-center g-2 mb-3 {{ ($isUnitAdmin || in_array(old('role', $user->role), ['admin_unit_kerja', 'dokter_magang', 'pembimbing_lapangan', 'mahasiswa_magang'], true)) ? '' : 'd-none' }}"
                     data-role-group="penempatan">
                     <label class="col-lg-3 col-form-label mb-1 my-lg-auto" for="jenisUnitKerja">Jenis Unit Kerja</label>
                     <div class="col-lg-9">
-                        <select class="mb-1 mb-lg-3 form-select" name="jenisUnitKerja" id="jenisUnitKerja">
-                            <option value="" disabled @selected(!old('jenisUnitKerja', $user->unitKerja?->jenis))>Pilih jenis unit kerja</option>
-                            <option value="Puskesmas" @selected(old('jenisUnitKerja', $user->unitKerja?->jenis) === 'Puskesmas')>Puskesmas</option>
+                        <select class="mb-1 mb-lg-3 form-select" name="jenisUnitKerja" id="jenisUnitKerja"
+                            @if ($isUnitAdmin) disabled @endif>
+                            <option value="" disabled @selected(!old('jenisUnitKerja', $currentJenis))>Pilih jenis unit kerja</option>
+                            <option value="Puskesmas" @selected(old('jenisUnitKerja', $currentJenis) === 'Puskesmas')>Puskesmas</option>
+                            @if (!$isUnitAdmin || $adminUnit?->jenis === 'Dinas_Kesehatan')
+                                <option value="Dinas_Kesehatan" @selected(old('jenisUnitKerja', $currentJenis) === 'Dinas_Kesehatan')>Dinas Kesehatan</option>
+                            @endif
                         </select>
+                        @if ($isUnitAdmin && $adminUnit)
+                            {{-- hidden input agar nilai tetap terkirim meski select disabled --}}
+                            <input type="hidden" name="jenisUnitKerja" value="{{ $adminUnit->jenis }}">
+                        @endif
                     </div>
                 </div>
 
-                <div class="row align-items-center g-2 mb-3 {{ in_array(old('role', $user->role), ['admin_unit_kerja', 'dokter_magang', 'pembimbing_lapangan', 'mahasiswa_magang'], true) ? '' : 'd-none' }}"
+                {{-- Unit Kerja --}}
+                <div class="row align-items-center g-2 mb-3 {{ (in_array(old('role', $user->role), ['admin_unit_kerja', 'dokter_magang', 'pembimbing_lapangan', 'mahasiswa_magang'], true) && $currentJenis === 'Puskesmas') ? '' : 'd-none' }}"
                     data-role-group="unit-kerja">
                     <label class="col-lg-3 col-form-label mb-1 my-lg-auto" for="namaUnitKerja">
                         <span id="unitKerjaLabel">Unit Kerja</span>
                     </label>
                     <div class="col-lg-9">
-                        <select class="mb-1 mb-lg-3 form-select" name="namaUnitKerja" id="namaUnitKerja">
+                        <select class="mb-1 mb-lg-3 form-select" name="namaUnitKerja" id="namaUnitKerja"
+                            @if ($isUnitAdmin) disabled @endif>
                             <option value="" disabled @selected(!old('namaUnitKerja', $user->unitKerja?->nama))>Pilih unit kerja</option>
                             @foreach ($daftarUnitKerja as $unitKerja)
                                 <option value="{{ $unitKerja->nama }}" data-unit-kerja-id="{{ $unitKerja->id }}"
                                     data-jenis="{{ $unitKerja->jenis }}"
-                                    @selected(old('jenisUnitKerja', $user->unitKerja?->jenis) === $unitKerja->jenis && old('namaUnitKerja', $user->unitKerja?->nama) === $unitKerja->nama)>
+                                    @selected(old('jenisUnitKerja', $currentJenis) === $unitKerja->jenis && old('namaUnitKerja', $user->unitKerja?->nama) === $unitKerja->nama)>
                                     {{ $unitKerja->nama }}
                                 </option>
                             @endforeach
                         </select>
+                        @if ($isUnitAdmin && $adminUnit)
+                            {{-- hidden input agar nilai tetap terkirim meski select disabled --}}
+                            <input type="hidden" name="namaUnitKerja" value="{{ $adminUnit->nama }}">
+                        @endif
                     </div>
                 </div>
 
+                {{-- Departemen --}}
                 <div class="row align-items-center g-2 mb-3 {{ in_array(old('role', $user->role), ['pembimbing_lapangan', 'mahasiswa_magang'], true) ? '' : 'd-none' }}"
                     data-role-group="departemen">
                     <label class="col-lg-3 col-form-label mb-1 my-lg-auto" for="namaDepartemen">
@@ -90,7 +109,7 @@
                                 <optgroup label="Dinas Kesehatan" data-jenis="Dinas_Kesehatan">
                                     @foreach ($daftarDepartemenDinasKesehatan as $departemen)
                                         <option value="{{ $departemen->nama }}"
-                                            @selected(old('jenisUnitKerja', $user->unitKerja?->jenis) === 'Dinas_Kesehatan' && old('namaDepartemen', $user->departemen?->nama) === $departemen->nama)>
+                                            @selected(old('jenisUnitKerja', $currentJenis) === 'Dinas_Kesehatan' && old('namaDepartemen', $user->departemen?->nama) === $departemen->nama)>
                                             {{ $departemen->nama }}
                                         </option>
                                     @endforeach
@@ -102,7 +121,7 @@
                                         data-jenis="{{ $unitKerja->jenis }}">
                                     @foreach ($unitKerja->departemens as $departemen)
                                         <option value="{{ $departemen->nama }}"
-                                            @selected(old('jenisUnitKerja', $user->unitKerja?->jenis) === $unitKerja->jenis && old('namaUnitKerja', $user->unitKerja?->nama) === $unitKerja->nama && old('namaDepartemen', $user->departemen?->nama) === $departemen->nama)>
+                                            @selected(old('jenisUnitKerja', $currentJenis) === $unitKerja->jenis && old('namaUnitKerja', $user->unitKerja?->nama) === $unitKerja->nama && old('namaDepartemen', $user->departemen?->nama) === $departemen->nama)>
                                             {{ $departemen->nama }}
                                         </option>
                                     @endforeach
@@ -183,6 +202,8 @@
 
     @push('scripts')
         <script>
+            const IS_UNIT_ADMIN = {{ $isUnitAdmin ? 'true' : 'false' }};
+
             function handleSelectRole() {
                 const selectedRole = document.querySelector('#role').value;
                 const isDoctor = selectedRole === 'dokter_magang';
@@ -191,20 +212,32 @@
                 const isUnitAdmin = selectedRole === 'admin_unit_kerja';
                 const isIntern = isDoctor || isStudent;
                 const requiresPlacement = isIntern || isSupervisor || isUnitAdmin;
-                const isSupportedRole = requiresPlacement;
                 const jenisUnitKerjaInput = document.querySelector('#jenisUnitKerja');
                 const unitKerjaInput = document.querySelector('#namaUnitKerja');
-                const departmentInput = document.querySelector('#namaDepartemen');
 
                 document.querySelector('[data-role-group="penempatan"]').classList.toggle('d-none', !requiresPlacement);
                 document.querySelector('[data-role-group="departemen"]').classList.toggle('d-none', !isStudent && !isSupervisor);
-                jenisUnitKerjaInput.disabled = !requiresPlacement;
+
+                // Jika login sebagai admin_unit_kerja, kunci jenis & unit kerja — tidak bisa diubah
+                if (!IS_UNIT_ADMIN) {
+                    jenisUnitKerjaInput.disabled = !requiresPlacement;
+
+                    if (isDoctor || isUnitAdmin) {
+                        jenisUnitKerjaInput.value = 'Puskesmas';
+                    }
+
+                    const dinasOption = jenisUnitKerjaInput.querySelector('option[value="Dinas_Kesehatan"]');
+                    if (dinasOption) {
+                        dinasOption.hidden = isDoctor || isUnitAdmin;
+                        dinasOption.disabled = isDoctor || isUnitAdmin;
+                    }
+                }
+
                 document.querySelector('#nip').disabled = !isSupervisor;
                 document.querySelector('#nik').disabled = !isIntern;
                 document.querySelector('#nim').disabled = !isIntern;
                 document.querySelector('#alamat').disabled = !isIntern;
                 document.querySelector('#universitas').disabled = !isIntern;
-                document.querySelector('#role').disabled = !isSupportedRole;
 
                 document.querySelector('#nip').required = isSupervisor;
                 document.querySelector('#nik').required = isIntern;
@@ -212,11 +245,6 @@
                 document.querySelector('#alamat').required = isIntern;
                 document.querySelector('#universitas').required = isIntern;
 
-                if (isDoctor) {
-                    jenisUnitKerjaInput.value = 'Puskesmas';
-                }
-                jenisUnitKerjaInput.querySelector('option[value="Dinas_Kesehatan"]').hidden = isDoctor;
-                jenisUnitKerjaInput.querySelector('option[value="Dinas_Kesehatan"]').disabled = isDoctor;
                 updateUnitKerjaOptions();
                 updateDepartemenOptions();
             }
@@ -240,6 +268,10 @@
                 if (selectedUnit?.dataset.jenis && selectedUnit.dataset.jenis !== unitType) {
                     unitKerjaInput.value = '';
                 }
+
+                // Jika login sebagai admin_unit_kerja, unit kerja dikunci — tidak perlu update
+                if (IS_UNIT_ADMIN) return;
+
                 const role = document.querySelector('#role').value;
                 const requiresUnitKerja = unitType === 'Puskesmas'
                     && ['admin_unit_kerja', 'dokter_magang', 'pembimbing_lapangan', 'mahasiswa_magang']

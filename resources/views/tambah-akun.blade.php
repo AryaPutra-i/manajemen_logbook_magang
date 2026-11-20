@@ -1,7 +1,8 @@
 <x-home-layout>
     @php
-        $isUnitAdmin = request()->user()->role === 'admin_unit_kerja';
-        $adminUnit = $isUnitAdmin ? request()->user()->unitKerja : null;
+        $authUser = request()->user();
+        $isUnitAdmin = $authUser->role === 'admin_unit_kerja';
+        $adminUnit = $isUnitAdmin ? $authUser->unitKerja : null;
     @endphp
     <section class="p-4 w-100 d-flex flex-column gap-3" style="max-width: 768px;">
         @if ($errors->any())
@@ -39,7 +40,7 @@
                                 <option value="dokter_magang" @selected(old('role') === 'dokter_magang')>Dokter Magang</option>
                                 <option value="pembimbing_lapangan" @selected(old('role') === 'pembimbing_lapangan')>Pembimbing Lapangan</option>
                                 <option value="mahasiswa_magang" @selected(old('role') === 'mahasiswa_magang')>Mahasiswa Magang</option>
-                                @if (request()->user()->role === 'admin')
+                                @if ($authUser->role === 'admin')
                                     <option value="admin_unit_kerja" @selected(old('role') === 'admin_unit_kerja')>Admin Unit Kerja</option>
                                 @endif
                             </select>
@@ -47,25 +48,34 @@
                     </div>
                 </div>
 
+                {{-- Jenis Unit Kerja: dikunci jika login sebagai admin_unit_kerja --}}
                 <div class="row align-items-center g-2 mb-3 {{ in_array(old('role'), ['dokter_magang', 'pembimbing_lapangan', 'mahasiswa_magang', 'admin_unit_kerja'], true) ? '' : 'd-none' }}"
                     data-role-group="penempatan">
                     <label class="col-lg-3 col-form-label mb-1 my-lg-auto" for="jenisUnitKerja">Jenis Unit Kerja</label>
                     <div class="col-lg-9">
-                        <select class="mb-1 mb-lg-3 form-select" name="jenisUnitKerja" id="jenisUnitKerja">
+                        <select class="mb-1 mb-lg-3 form-select" name="jenisUnitKerja" id="jenisUnitKerja"
+                            @if ($isUnitAdmin) disabled @endif>
                             <option value="" disabled @selected(!old('jenisUnitKerja') && !$adminUnit)>Pilih jenis unit kerja</option>
                             <option value="Puskesmas" @selected(old('jenisUnitKerja', $adminUnit?->jenis) === 'Puskesmas')>Puskesmas</option>
-                            
+                            @if (!$isUnitAdmin || $adminUnit?->jenis === 'Dinas_Kesehatan')
+                                <option value="Dinas_Kesehatan" @selected(old('jenisUnitKerja', $adminUnit?->jenis) === 'Dinas_Kesehatan')>Dinas Kesehatan</option>
+                            @endif
                         </select>
+                        @if ($isUnitAdmin && $adminUnit)
+                            <input type="hidden" name="jenisUnitKerja" value="{{ $adminUnit->jenis }}">
+                        @endif
                     </div>
                 </div>
 
+                {{-- Unit Kerja: dikunci jika login sebagai admin_unit_kerja --}}
                 <div class="row align-items-center g-2 mb-3 {{ in_array(old('role'), ['dokter_magang', 'pembimbing_lapangan', 'mahasiswa_magang', 'admin_unit_kerja'], true) ? '' : 'd-none' }}"
                     data-role-group="unit-kerja">
                     <label class="col-lg-3 col-form-label mb-1 my-lg-auto" for="namaUnitKerja">
                         <span id="unitKerjaLabel">Unit Kerja</span>
                     </label>
                     <div class="col-lg-9">
-                        <select class="mb-1 mb-lg-3 form-select" name="namaUnitKerja" id="namaUnitKerja">
+                        <select class="mb-1 mb-lg-3 form-select" name="namaUnitKerja" id="namaUnitKerja"
+                            @if ($isUnitAdmin) disabled @endif>
                             <option value="" disabled @selected(!old('namaUnitKerja') && !$adminUnit)>Pilih unit kerja</option>
                             @foreach ($daftarUnitKerja as $unitKerja)
                                 <option value="{{ $unitKerja->nama }}" data-unit-kerja-id="{{ $unitKerja->id }}"
@@ -75,6 +85,9 @@
                                 </option>
                             @endforeach
                         </select>
+                        @if ($isUnitAdmin && $adminUnit)
+                            <input type="hidden" name="namaUnitKerja" value="{{ $adminUnit->nama }}">
+                        @endif
                     </div>
                 </div>
 
@@ -173,6 +186,8 @@
 
     @push('scripts')
         <script>
+            const IS_UNIT_ADMIN = {{ $isUnitAdmin ? 'true' : 'false' }};
+
             function handleSelectRole() {
                 const selectedRole = document.querySelector('#role').value;
                 const isDoctor = selectedRole === 'dokter_magang';
@@ -183,25 +198,24 @@
                 const requiresPlacement = isDoctor || isSupervisor || isStudent || isNewUnitAdmin;
                 const jenisUnitKerjaInput = document.querySelector('#jenisUnitKerja');
                 const unitKerjaInput = document.querySelector('#namaUnitKerja');
-                const departmentInput = document.querySelector('#namaDepartemen');
 
                 document.querySelector('[data-role-group="penempatan"]').classList.toggle('d-none', !requiresPlacement);
                 document.querySelector('[data-role-group="departemen"]').classList.toggle('d-none', !isStudent && !isSupervisor);
-                jenisUnitKerjaInput.disabled = !requiresPlacement;
-                unitKerjaInput.required = requiresPlacement;
 
-                @if ($isUnitAdmin && $adminUnit)
-                    jenisUnitKerjaInput.value = '{{ $adminUnit->jenis }}';
-                    unitKerjaInput.value = '{{ $adminUnit->nama }}';
-                @else
+                // Jika login sebagai admin_unit_kerja, kunci jenis & unit kerja
+                if (!IS_UNIT_ADMIN) {
+                    jenisUnitKerjaInput.disabled = !requiresPlacement;
+
                     if (isDoctor || isNewUnitAdmin) {
                         jenisUnitKerjaInput.value = 'Puskesmas';
                     }
-                @endif
-                jenisUnitKerjaInput.querySelector('option[value="Dinas_Kesehatan"]').hidden = isDoctor;
-                jenisUnitKerjaInput.querySelector('option[value="Dinas_Kesehatan"]').disabled = isDoctor;
-                updateUnitKerjaOptions();
-                updateDepartemenOptions();
+
+                    const dinasOption = jenisUnitKerjaInput.querySelector('option[value="Dinas_Kesehatan"]');
+                    if (dinasOption) {
+                        dinasOption.hidden = isDoctor || isNewUnitAdmin;
+                        dinasOption.disabled = isDoctor || isNewUnitAdmin;
+                    }
+                }
 
                 document.querySelector('#nip').disabled = !isSupervisor;
                 document.querySelector('#nik').disabled = !isIntern;
@@ -215,6 +229,8 @@
                 document.querySelector('#alamat').required = isIntern;
                 document.querySelector('#universitas').required = isIntern;
 
+                updateUnitKerjaOptions();
+                updateDepartemenOptions();
             }
 
             function updateUnitKerjaOptions() {
@@ -236,6 +252,10 @@
                 if (selectedUnit?.dataset.jenis && selectedUnit.dataset.jenis !== unitType) {
                     unitKerjaInput.value = '';
                 }
+
+                // Jika login sebagai admin_unit_kerja, unit kerja dikunci
+                if (IS_UNIT_ADMIN) return;
+
                 const requiresPuskesmas = unitType === 'Puskesmas'
                     && ['admin_unit_kerja', 'dokter_magang', 'pembimbing_lapangan', 'mahasiswa_magang']
                         .includes(document.querySelector('#role').value);
@@ -275,15 +295,15 @@
                     || (role === 'pembimbing_lapangan' && unitType === 'Dinas_Kesehatan');
                 document.querySelector('#departemenLabel').textContent = role === 'pembimbing_lapangan'
                     && unitType === 'Puskesmas'
-                    ? 'Departemen'
+                    ? 'Departemen (opsional)'
                     : 'Departemen';
             }
 
-            document.querySelector('#jenisUnitKerja').addEventListener('change', function () {
+            document.querySelector('#jenisUnitKerja').addEventListener('change', function() {
                 handleSelectRole();
             });
 
-            document.querySelector('#namaUnitKerja').addEventListener('change', function () {
+            document.querySelector('#namaUnitKerja').addEventListener('change', function() {
                 updateDepartemenOptions();
             });
 

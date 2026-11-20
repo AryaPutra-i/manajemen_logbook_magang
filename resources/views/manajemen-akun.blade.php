@@ -1,4 +1,8 @@
 <x-home-layout>
+    @php
+        $authUser = request()->user();
+        $isUnitAdmin = $authUser->role === 'admin_unit_kerja';
+    @endphp
     <section class="p-4 w-100 d-flex flex-column gap-3">
         @session('status')
             <div class="alert alert-success">
@@ -13,8 +17,9 @@
                         <li>{{ $error }}</li>
                     @endforeach
                 </ul>
+            </div>
         @endif
-        </div>
+
         <div id="importAlertSlot"></div>
 
         <div class="row g-3">
@@ -68,7 +73,6 @@
                 </div>
                 <x-upload-accounts-dialog></x-upload-accounts-dialog>
 
-
                 <table class="table" id="manajemen-akun">
                     <thead>
                         <tr>
@@ -76,6 +80,9 @@
                             <th>Username</th>
                             <th>Nama Lengkap</th>
                             <th>Role</th>
+                            @if (!$isUnitAdmin)
+                                <th>Unit Kerja</th>
+                            @endif
                             <th>Aksi</th>
                         </tr>
                     </thead>
@@ -95,6 +102,9 @@
                                         default => $user->role,
                                     } }}
                                 </td>
+                                @if (!$isUnitAdmin)
+                                    <td>{{ $user->unitKerja?->nama ?? '-' }}</td>
+                                @endif
                                 <td>
                                     <form class="d-inline"
                                         action="{{ route('akun.reset-password', ['user' => $user->id]) }}"
@@ -105,14 +115,27 @@
                                             Reset
                                             Password</button>
                                     </form>
-                                    <a href="{{ route('akun.edit', ['user' => $user->id]) }}" class="btn btn-success"><i
-                                            class="bi bi-pencil-square text-white"></i>
-                                        Edit</a>
+                                    @php
+                                        $canEdit = $authUser->role === 'admin'
+                                            || ($isUnitAdmin
+                                                && !in_array($user->role, ['admin', 'admin_unit_kerja'])
+                                                && $user->unit_kerja_id == $authUser->unit_kerja_id);
+                                    @endphp
+                                    @if ($canEdit)
+                                        <a href="{{ route('akun.edit', ['user' => $user->id]) }}" class="btn btn-success">
+                                            <i class="bi bi-pencil-square text-white"></i> Edit
+                                        </a>
+                                    @else
+                                        <button class="btn btn-success" disabled>
+                                            <i class="bi bi-pencil-square text-white"></i> Edit
+                                        </button>
+                                    @endif
                                     <form class="d-inline" method="POST"
                                         action="{{ route('akun.destroy', ['id' => $user->id]) }}">
                                         @csrf
                                         @method('DELETE')
-                                        <button class="btn btn-danger" @if ($user->role === 'admin' || $user->id === auth()->id() || ($user->role === 'admin_unit_kerja' && auth()->user()->role !== 'admin')) disabled @endif
+                                        <button class="btn btn-danger"
+                                            @if ($user->role === 'admin' || $user->id === auth()->id() || ($user->role === 'admin_unit_kerja' && $authUser->role !== 'admin')) disabled @endif
                                             type="submit"><i class="bi bi-trash-fill text-white"></i> Hapus</button>
                                     </form>
                                 </td>
@@ -131,7 +154,7 @@
                     topEnd: null
                 },
                 columnDefs: [{
-                    targets: [0, 4],
+                    targets: [0, {{ $isUnitAdmin ? 4 : 5 }}],
                     className: 'dt-nowrap'
                 }, {
                     targets: 0,
