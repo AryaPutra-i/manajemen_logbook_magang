@@ -11,11 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropForeign(['puskesmas_id']);
+        });
 
         Schema::rename('puskesmas', 'unit_kerjas');
 
         Schema::table('unit_kerjas', function (Blueprint $table) {
-            $table->enum('jenis', ['Dinas_Kesehatan', 'Puskesmas'])->default('Puskesmas')->after('nama');
+            $table->enum('jenis', ['Dinas_Kesehatan', 'Puskesmas'])->default('Puskesmas');
         });
     }
 
@@ -26,6 +29,12 @@ return new class extends Migration
     {
         Schema::table('unit_kerjas', function (Blueprint $table) {
             $table->dropColumn('jenis');
+        });
+
+        Schema::rename('unit_kerjas', 'puskesmas');
+
+        Schema::table('users', function (Blueprint $table) {
+            $table->foreign('puskesmas_id')->references('id')->on('puskesmas')->onDelete('cascade');
         });
     }
 };

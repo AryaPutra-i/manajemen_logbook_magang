@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('nim');
             $table->string('alamat');
             $table->string('universitas');
-            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('mahasiswa_magang_id')->constrained('users')->cascadeOnDelete();
             $table->timestamps();
         });
     }
