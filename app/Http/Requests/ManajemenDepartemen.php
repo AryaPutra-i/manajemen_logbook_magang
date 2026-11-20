@@ -32,13 +32,29 @@ class ManajemenDepartemen extends FormRequest
             $unitKerjaRule->where('id', $actor->unit_kerja_id);
         }
 
+        $currentId = $this->route('id');
+
+        $uniqueNamaRule = Rule::unique('departemens')
+            ->where('unit_kerja_id', $this->input('unit_kerja_id', $isUnitAdmin ? $actor->unit_kerja_id : null));
+
+        if ($currentId) {
+            $uniqueNamaRule->ignore($currentId);
+        }
+
         return [
-            'nama' => ['required', 'string', 'max:255'],
+            'nama' => ['required', 'string', 'max:255', $uniqueNamaRule],
             'unit_kerja_id' => [
                 'required',
                 'integer',
                 $unitKerjaRule,
             ],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'nama.unique' => 'Departemen dengan nama tersebut sudah ada di unit kerja ini.',
         ];
     }
 }
