@@ -3,11 +3,11 @@
 namespace App\Http\Requests;
 
 use App\Models\UnitKerja;
+use App\Rules\UniqueEncryptedUserIdentifier;
 use App\UserRole;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Enum;
 
 class TambahAkunRequest extends FormRequest
 {
@@ -134,9 +134,9 @@ class TambahAkunRequest extends FormRequest
                 'max:255',
                 $departemenRule,
             ],
-            'nip' => ['nullable', 'string', 'size:18', 'unique:users,nip'],
-            'nik' => ['nullable', 'string', 'size:16', 'unique:users,nik'],
-            'nim' => ['nullable', 'string', 'max:255', 'unique:users,nim'],
+            'nip' => ['nullable', 'string', 'size:18', new UniqueEncryptedUserIdentifier('nip')],
+            'nik' => ['nullable', 'string', 'size:16', new UniqueEncryptedUserIdentifier('nik')],
+            'nim' => ['nullable', 'string', 'max:255', new UniqueEncryptedUserIdentifier('nim')],
             'alamat' => ['nullable', 'string', 'max:255'],
             'universitas' => ['nullable', 'string', 'max:255'],
         ];
@@ -160,11 +160,8 @@ class TambahAkunRequest extends FormRequest
             'namaDepartemen.required' => 'Departemen wajib dipilih',
             'namaDepartemen.exists' => 'Departemen tidak sesuai dengan unit kerja yang dipilih',
             'nip' => 'NIP tidak valid',
-            'nip.unique' => 'NIP sudah terdaftar',
             'nik' => 'NIK tidak valid',
-            'nik.unique' => 'NIK sudah terdaftar',
             'nim' => 'NIM tidak valid',
-            'nim.unique' => 'NIM sudah terdaftar',
             'alamat' => 'Alamat tidak valid',
             'universitas' => 'Universitas tidak valid',
         ];

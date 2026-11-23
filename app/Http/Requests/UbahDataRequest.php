@@ -2,9 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Rules\UniqueEncryptedUserIdentifier;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class UbahDataRequest extends FormRequest
 {
@@ -30,12 +30,12 @@ class UbahDataRequest extends FormRequest
         ];
 
         if (in_array($user->role, ['dokter_magang', 'mahasiswa_magang'], true)) {
-            $rules['nik'] = ['nullable', 'string', 'size:16', Rule::unique('users')->ignore($user->id)];
-            $rules['nim'] = ['nullable', 'string', 'max:255', Rule::unique('users')->ignore($user->id)];
+            $rules['nik'] = ['nullable', 'string', 'size:16', new UniqueEncryptedUserIdentifier('nik', $user->id)];
+            $rules['nim'] = ['nullable', 'string', 'max:255', new UniqueEncryptedUserIdentifier('nim', $user->id)];
             $rules['alamat'] = ['nullable', 'string', 'max:255'];
             $rules['universitas'] = ['nullable', 'string', 'max:255'];
         } elseif (in_array($user->role, ['pembimbing_lapangan', 'admin_unit_kerja'], true)) {
-            $rules['nip'] = ['nullable', 'string', 'size:18', Rule::unique('users')->ignore($user->id)];
+            $rules['nip'] = ['nullable', 'string', 'size:18', new UniqueEncryptedUserIdentifier('nip', $user->id)];
         }
 
         return $rules;
@@ -46,9 +46,7 @@ class UbahDataRequest extends FormRequest
         return [
             'nama' => 'Nama tidak valid',
             'nik' => 'NIK tidak valid',
-            'nik.unique' => 'NIK sudah terdaftar',
             'nim' => 'NIM tidak valid',
-            'nim.unique' => 'NIM sudah terdaftar',
             'alamat' => 'Alamat tidak valid',
             'universitas' => 'Universitas tidak valid',
         ];
