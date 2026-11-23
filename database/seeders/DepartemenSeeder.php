@@ -19,8 +19,6 @@ class DepartemenSeeder extends Seeder
             'Bidang Pencegahan dan Pengendalian Penyakit',
             'Bidang Pelayanan Kesehatan',
             'Bidang Sumber Daya Kesehatan',
-            'UPTD Laboratorium Kesehatan Daerah',
-            'UPTD Instalasi Farmasi',
         ];
 
         $dinkes = UnitKerja::where('jenis', 'Dinas_Kesehatan')->first();

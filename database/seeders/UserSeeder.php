@@ -70,16 +70,16 @@ class UserSeeder extends Seeder
 
         ]);
         User::factory()->create([
-            'username' => 'pembimbing.lapangan.id',
+            'username' => 'admin_unit',
             'password' => 'password123',
-            'role' => 'pembimbing_lapangan',
-            'nip' => fake()->regexify('[0-9]{18}'),
+            'role' => 'admin_unit_kerja',
+            'nip' => null,
             'nik' => null,
             'nim' => null,
             'alamat' => null,
             'universitas' => null,
-            'unit_kerja_id' => $dinkesId,
-            'departemen_id' => 1,
+            'unit_kerja_id' => 1,
+            'departemen_id' => null,
 
         ]);
     }
