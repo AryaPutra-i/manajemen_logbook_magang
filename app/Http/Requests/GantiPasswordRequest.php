@@ -24,17 +24,15 @@ class GantiPasswordRequest extends FormRequest
     {
         return [
             'passwordLama' => ['required', 'string'],
-            'passwordBaru' => ['required', 'string', 'min:8', 'max:20'],
+            'passwordBaru' => ['required', 'string'],
         ];
     }
 
-    public function messages(): array
+    public function messages()
     {
         return [
             'passwordLama.required' => 'Password lama tidak boleh kosong',
             'passwordBaru.required' => 'Password baru tidak boleh kosong',
-            'passwordBaru.min' => 'Password baru minimal 8 karakter',
-            'passwordBaru.max' => 'Password baru maksimal 20 karakter',
         ];
     }
 }
