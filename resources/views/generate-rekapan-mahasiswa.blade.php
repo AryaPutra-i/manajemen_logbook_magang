@@ -1,6 +1,8 @@
 @php
-    $lokasiMagang = implode(' - ', array_filter([$user->unitKerja?->nama, $user->departemen?->nama])) ?: '-';
-    $jenisPenempatan = match ($user->unitKerja?->jenis) {
+    $unitKerjaObj = $user?->unitKerja ?? $daftarLog->first()?->unitKerja;
+    $departemenObj = $user?->departemen ?? $daftarLog->first()?->departemen;
+    $lokasiMagang = implode(' - ', array_filter([$unitKerjaObj?->nama, $departemenObj?->nama])) ?: '-';
+    $jenisPenempatan = match ($unitKerjaObj?->jenis) {
         'Puskesmas' => 'Puskesmas',
         'Dinas_Kesehatan' => 'Dinas Kesehatan',
         default => '-',
@@ -93,26 +95,6 @@
                         <table>
                             <tbody>
                                 <tr>
-                                    <td>NAMA</td>
-                                    <td>:</td>
-                                    <td>{{ $user->nama ?? '-' }}</td>
-                                </tr>
-                                <tr>
-                                    <td>NIM</td>
-                                    <td>:</td>
-                                    <td>{{ $user->nim ?? '-' }}</td>
-                                </tr>
-                                <tr>
-                                    <td>UNIVERSITAS</td>
-                                    <td>:</td>
-                                    <td>{{ $user->universitas ?? '-' }}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-
-                        <table>
-                            <tbody>
-                                <tr>
                                     <td>JENIS PENEMPATAN</td>
                                     <td>:</td>
                                     <td>{{ $jenisPenempatan }}</td>
@@ -139,7 +121,7 @@
                             <thead>
                                 <tr>
                                     <th rowspan="2">NO</th>
-                                    <th rowspan="2">NAMA KEGIATAN</th>
+                                    <th rowspan="2">NAMA MAHASISWA</th>
                                     <th colspan="{{ count($bulan['days']) }}">TANGGAL</th>
                                     <th rowspan="2">TOTAL KEGIATAN</th>
                                     <th rowspan="2">KETERANGAN</th>
@@ -153,18 +135,18 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @forelse ($rekap as $namaKegiatan => $jumlahPerTanggal)
+                                @forelse ($rekap as $namaMahasiswa => $jumlahMahasiswaPerTanggal)
                                     <tr>
                                         <td class="text-center">{{ $loop->iteration }}</td>
-                                        <td>{{ $namaKegiatan }}</td>
-                                        @foreach ($bulan['days'] as $tanggal)
+                                        <td>{{ $namaMahasiswa }}</td>
+                                        @foreach ($bulan['days'] as $tanggal)   
                                             @php($isOutOfRange = $tanggal->lt($tanggalLogMulai) || $tanggal->gt($tanggalLogAkhir))
                                             <td class="day-col text-center {{ $isOutOfRange ? 'bg-gray-300' : '' }}">
-                                                {{ $isOutOfRange ? '' : ($jumlahPerTanggal[$tanggal->toDateString()] ?? '') }}
+                                                {{ $isOutOfRange ? '' : ($jumlahMahasiswaPerTanggal[$tanggal->toDateString()] ?? '') }}
                                             </td>
                                         @endforeach
                                         <td class="text-center">
-                                            {{ collect($bulan['days'])->sum(fn($d) => $jumlahPerTanggal[$d->toDateString()] ?? 0) }}
+                                            {{ collect($bulan['days'])->sum(fn($d) => $jumlahMahasiswaPerTanggal[$d->toDateString()] ?? 0) }}
                                         </td>
                                         <td></td>
                                     </tr>

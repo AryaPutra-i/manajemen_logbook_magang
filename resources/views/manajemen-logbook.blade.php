@@ -417,7 +417,26 @@
             }
 
             function handleGenerateRekapanMahasiswa() {
-                openRecap(@json(route('logbook.mahasiswa.generate-rekapan')), document.querySelector('#usernameMahasiswa').value);
+                const username = document.querySelector('#usernameMahasiswa')?.value;
+                const unitKerja = document.querySelector('#unitMahasiswa')?.value;
+                const tanggalLogMulai = document.querySelector('#tanggalLogMulai')?.value;
+                const tanggalLogAkhir = document.querySelector('#tanggalLogAkhir')?.value;
+
+                if (!tanggalLogMulai || !tanggalLogAkhir) {
+                    alert('Pilih rentang tanggal untuk membuat rekap.');
+                    return;
+                }
+
+                const params = { tanggalLogMulai, tanggalLogAkhir };
+                if (username) {
+                    params.username = username;
+                }
+                if (unitKerja) {
+                    params.unitKerja = unitKerja;
+                }
+
+                const parameters = new URLSearchParams(params);
+                window.open(`${@json(route('logbook.mahasiswa.generate-rekapan'))}?${parameters.toString()}`, '_blank', 'noopener');
             }
         </script>
     @endpush

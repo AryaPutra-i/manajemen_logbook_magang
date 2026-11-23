@@ -185,46 +185,60 @@ class LogMahasiswaController extends Controller
     public function generateRekapanMahasiswa(Request $request)
     {
         $validated = $request->validate([
-            'username' => ['required', 'string', 'exists:users,username'],
+            'username' => ['nullable', 'string', 'exists:users,username'],
+            'unitKerja' => ['nullable', 'string'],
             'tanggalLogMulai' => ['required', 'date_format:Y-m-d'],
             'tanggalLogAkhir' => ['required', 'date_format:Y-m-d', 'after_or_equal:tanggalLogMulai'],
         ]);
 
-        $user = User::where('username', $validated['username'])->firstOrFail();
+        $user = null;
+        if (!empty($validated['username'])) {
+            $user = User::where('username', $validated['username'])->firstOrFail();
+            abort_unless($user->role === 'mahasiswa_magang', 404);
 
-        abort_unless($user->role === 'mahasiswa_magang', 404);
-
-        if (request()->user()->role === 'admin_unit_kerja') {
-            if ($user->unit_kerja_id !== request()->user()->unit_kerja_id) {
-                abort(403, 'Anda hanya dapat mengunduh rekapan logbook di unit kerja Anda');
+            if (request()->user()->role === 'admin_unit_kerja') {
+                if ($user->unit_kerja_id !== request()->user()->unit_kerja_id) {
+                    abort(403, 'Anda hanya dapat mengunduh rekapan logbook di unit kerja Anda');
+                }
             }
+        } elseif (request()->user()->role === 'admin_unit_kerja') {
+            $user = request()->user();
         }
 
         $tanggalLogMulai = Carbon::createFromFormat('Y-m-d', $validated['tanggalLogMulai'])->startOfDay();
         $tanggalLogAkhir = Carbon::createFromFormat('Y-m-d', $validated['tanggalLogAkhir'])->endOfDay();
 
-        $daftarLog = LogMahasiswaMagang::where('mahasiswa_magang_id', $user->id)
+        $logQuery = LogMahasiswaMagang::with(['mahasiswaMagang', 'unitKerja', 'departemen'])
             ->where('status_verifikasi', 'selesai')
-            ->whereBetween('tanggal', [$tanggalLogMulai, $tanggalLogAkhir])
-            ->orderBy('tanggal')
-            ->get();
+            ->whereBetween('tanggal', [$tanggalLogMulai, $tanggalLogAkhir]);
 
-        // Rekap: nama_kegiatan => [tanggal => jumlah]
+        if ($user && $user->role === 'mahasiswa_magang') {
+            $logQuery->where('mahasiswa_magang_id', $user->id);
+        } elseif (request()->user()->role === 'admin_unit_kerja') {
+            $logQuery->where('unit_kerja_id', request()->user()->unit_kerja_id);
+        } elseif (!empty($validated['unitKerja'])) {
+            $unitKerjaNama = $validated['unitKerja'];
+            $logQuery->whereHas('unitKerja', function ($q) use ($unitKerjaNama) {
+                $q->where('nama', $unitKerjaNama);
+            });
+        }
+
+        $daftarLog = $logQuery->orderBy('tanggal')->get();
+
         $rekap = [];
         foreach ($daftarLog as $log) {
-            $key = $log->nama_kegiatan;
+            $mahasiswa = $log->mahasiswaMagang;
+            $key = $mahasiswa?->nama ?: ($mahasiswa?->username ?? ($user?->nama ?: 'Mahasiswa'));
             $tgl = $log->tanggal->toDateString();
             $rekap[$key][$tgl] = ($rekap[$key][$tgl] ?? 0) + 1;
         }
 
-        // Total kegiatan per tanggal
         $totalPerTanggal = [];
         foreach ($daftarLog as $log) {
             $tgl = $log->tanggal->toDateString();
             $totalPerTanggal[$tgl] = ($totalPerTanggal[$tgl] ?? 0) + 1;
         }
 
-        // Grup per bulan (sama seperti rekap dokter)
         $grupBulan = [];
         $cursor = $tanggalLogMulai->copy()->startOfMonth();
         $akhirBulan = $tanggalLogAkhir->copy()->endOfMonth();
