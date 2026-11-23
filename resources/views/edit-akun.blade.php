@@ -38,15 +38,20 @@
                     <label class="col-lg-3 col-form-label mb-1 my-lg-auto" for="role">Role</label>
                     <div class="col-lg-9">
                         <div class="mb-3 input-group">
-                            <select onchange="handleSelectRole()" class="form-select" name="role" id="role">
-                                <option value="" disabled>Masukkan role</option>
-                                @if ($authUser->role === 'admin')
-                                    <option value="admin_unit_kerja" @selected(old('role', $user->role) === 'admin_unit_kerja')>Admin Unit Kerja</option>
-                                @endif
-                                <option value="dokter_magang" @selected(old('role', $user->role) === 'dokter_magang')>Dokter Magang</option>
-                                <option value="pembimbing_lapangan" @selected(old('role', $user->role) === 'pembimbing_lapangan')>Pembimbing Lapangan</option>
-                                <option value="mahasiswa_magang" @selected(old('role', $user->role) === 'mahasiswa_magang')>Mahasiswa Magang</option>
-                            </select>
+                            @if ($user->role === 'admin')
+                                <input type="text" class="form-control" value="Admin" disabled readonly>
+                                <input type="hidden" name="role" id="role" value="admin">
+                            @else
+                                <select onchange="handleSelectRole()" class="form-select" name="role" id="role">
+                                    <option value="" disabled>Masukkan role</option>
+                                    @if ($authUser->role === 'admin')
+                                        <option value="admin_unit_kerja" @selected(old('role', $user->role) === 'admin_unit_kerja')>Admin Unit Kerja</option>
+                                    @endif
+                                    <option value="dokter_magang" @selected(old('role', $user->role) === 'dokter_magang')>Dokter Magang</option>
+                                    <option value="pembimbing_lapangan" @selected(old('role', $user->role) === 'pembimbing_lapangan')>Pembimbing Lapangan</option>
+                                    <option value="mahasiswa_magang" @selected(old('role', $user->role) === 'mahasiswa_magang')>Mahasiswa Magang</option>
+                                </select>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -205,7 +210,9 @@
             const IS_UNIT_ADMIN = {{ $isUnitAdmin ? 'true' : 'false' }};
 
             function handleSelectRole() {
-                const selectedRole = document.querySelector('#role').value;
+                const roleEl = document.querySelector('#role');
+                const selectedRole = roleEl ? roleEl.value : '';
+                const isAdmin = selectedRole === 'admin';
                 const isDoctor = selectedRole === 'dokter_magang';
                 const isSupervisor = selectedRole === 'pembimbing_lapangan';
                 const isStudent = selectedRole === 'mahasiswa_magang';
@@ -215,43 +222,58 @@
                 const jenisUnitKerjaInput = document.querySelector('#jenisUnitKerja');
                 const unitKerjaInput = document.querySelector('#namaUnitKerja');
 
-                document.querySelector('[data-role-group="penempatan"]').classList.toggle('d-none', !requiresPlacement);
-                document.querySelector('[data-role-group="departemen"]').classList.toggle('d-none', !isStudent && !isSupervisor);
+                const penempatanGroup = document.querySelector('[data-role-group="penempatan"]');
+                if (penempatanGroup) {
+                    penempatanGroup.classList.toggle('d-none', !requiresPlacement);
+                }
+
+                const departemenGroup = document.querySelector('[data-role-group="departemen"]');
+                if (departemenGroup) {
+                    departemenGroup.classList.toggle('d-none', !isStudent && !isSupervisor);
+                }
 
                 // Jika login sebagai admin_unit_kerja, kunci jenis & unit kerja — tidak bisa diubah
                 if (!IS_UNIT_ADMIN) {
-                    jenisUnitKerjaInput.disabled = !requiresPlacement;
+                    if (jenisUnitKerjaInput) {
+                        jenisUnitKerjaInput.disabled = !requiresPlacement;
 
-                    if (isDoctor || isUnitAdmin) {
-                        jenisUnitKerjaInput.value = 'Puskesmas';
-                    }
+                        if (isDoctor || isUnitAdmin) {
+                            jenisUnitKerjaInput.value = 'Puskesmas';
+                        }
 
-                    const dinasOption = jenisUnitKerjaInput.querySelector('option[value="Dinas_Kesehatan"]');
-                    if (dinasOption) {
-                        dinasOption.hidden = isDoctor || isUnitAdmin;
-                        dinasOption.disabled = isDoctor || isUnitAdmin;
+                        const dinasOption = jenisUnitKerjaInput.querySelector('option[value="Dinas_Kesehatan"]');
+                        if (dinasOption) {
+                            dinasOption.hidden = isDoctor || isUnitAdmin;
+                            dinasOption.disabled = isDoctor || isUnitAdmin;
+                        }
                     }
                 }
 
-                document.querySelector('#nip').disabled = !isSupervisor;
-                document.querySelector('#nik').disabled = !isIntern;
-                document.querySelector('#nim').disabled = !isIntern;
-                document.querySelector('#alamat').disabled = !isIntern;
-                document.querySelector('#universitas').disabled = !isIntern;
+                const nipInput = document.querySelector('#nip');
+                if (nipInput) {
+                    nipInput.disabled = !isSupervisor;
+                    nipInput.required = isSupervisor;
+                }
 
-                document.querySelector('#nip').required = isSupervisor;
-                document.querySelector('#nik').required = isIntern;
-                document.querySelector('#nim').required = isIntern;
-                document.querySelector('#alamat').required = isIntern;
-                document.querySelector('#universitas').required = isIntern;
+                const internFields = ['#nik', '#nim', '#alamat', '#universitas'];
+                internFields.forEach((selector) => {
+                    const el = document.querySelector(selector);
+                    if (el) {
+                        el.disabled = !isIntern;
+                        el.required = isIntern;
+                    }
+                });
 
                 updateUnitKerjaOptions();
                 updateDepartemenOptions();
             }
 
             function updateUnitKerjaOptions() {
-                const unitType = document.querySelector('#jenisUnitKerja').value;
+                const jenisUnitKerjaInput = document.querySelector('#jenisUnitKerja');
+                const unitType = jenisUnitKerjaInput ? jenisUnitKerjaInput.value : '';
                 const unitKerjaInput = document.querySelector('#namaUnitKerja');
+                if (!unitKerjaInput) return;
+
                 const hasUnitForType = [...unitKerjaInput.querySelectorAll('option[data-jenis]')]
                     .some((option) => option.dataset.jenis === unitType);
 
@@ -260,9 +282,13 @@
                     option.hidden = !isSelectedType;
                     option.disabled = !isSelectedType;
                 });
-                unitKerjaInput.querySelector('option:not([data-jenis])').textContent = unitType && !hasUnitForType
-                    ? 'Belum ada unit kerja untuk jenis ini'
-                    : 'Pilih unit kerja';
+
+                const defaultOption = unitKerjaInput.querySelector('option:not([data-jenis])');
+                if (defaultOption) {
+                    defaultOption.textContent = unitType && !hasUnitForType
+                        ? 'Belum ada unit kerja untuk jenis ini'
+                        : 'Pilih unit kerja';
+                }
 
                 const selectedUnit = unitKerjaInput.selectedOptions[0];
                 if (selectedUnit?.dataset.jenis && selectedUnit.dataset.jenis !== unitType) {
@@ -272,23 +298,36 @@
                 // Jika login sebagai admin_unit_kerja, unit kerja dikunci — tidak perlu update
                 if (IS_UNIT_ADMIN) return;
 
-                const role = document.querySelector('#role').value;
+                const roleEl = document.querySelector('#role');
+                const role = roleEl ? roleEl.value : '';
                 const requiresUnitKerja = unitType === 'Puskesmas'
                     && ['admin_unit_kerja', 'dokter_magang', 'pembimbing_lapangan', 'mahasiswa_magang']
                         .includes(role);
                 unitKerjaInput.disabled = !requiresUnitKerja;
                 unitKerjaInput.required = requiresUnitKerja;
-                document.querySelector('[data-role-group="unit-kerja"]').classList.toggle('d-none', !requiresUnitKerja);
-                document.querySelector('#unitKerjaLabel').textContent = unitType === 'Puskesmas'
-                    ? 'Puskesmas'
-                    : 'Unit Kerja Dinas Kesehatan';
+
+                const unitKerjaGroup = document.querySelector('[data-role-group="unit-kerja"]');
+                if (unitKerjaGroup) {
+                    unitKerjaGroup.classList.toggle('d-none', !requiresUnitKerja);
+                }
+
+                const unitKerjaLabel = document.querySelector('#unitKerjaLabel');
+                if (unitKerjaLabel) {
+                    unitKerjaLabel.textContent = unitType === 'Puskesmas'
+                        ? 'Puskesmas'
+                        : 'Unit Kerja Dinas Kesehatan';
+                }
             }
 
             function updateDepartemenOptions() {
-                const unitType = document.querySelector('#jenisUnitKerja').value;
-                const role = document.querySelector('#role').value;
-                const unitKerjaId = document.querySelector('#namaUnitKerja').selectedOptions[0]?.dataset.unitKerjaId;
+                const jenisUnitKerjaInput = document.querySelector('#jenisUnitKerja');
+                const unitType = jenisUnitKerjaInput ? jenisUnitKerjaInput.value : '';
+                const roleEl = document.querySelector('#role');
+                const role = roleEl ? roleEl.value : '';
+                const unitKerjaInput = document.querySelector('#namaUnitKerja');
+                const unitKerjaId = unitKerjaInput?.selectedOptions[0]?.dataset.unitKerjaId;
                 const departmentInput = document.querySelector('#namaDepartemen');
+                if (!departmentInput) return;
 
                 departmentInput.querySelectorAll('optgroup').forEach((group) => {
                     const isSelectedType = group.dataset.jenis === unitType;
@@ -309,19 +348,29 @@
                     || (unitType === 'Puskesmas' && !unitKerjaId);
                 departmentInput.required = role === 'mahasiswa_magang'
                     || (role === 'pembimbing_lapangan' && unitType === 'Dinas_Kesehatan');
-                document.querySelector('#departemenLabel').textContent = role === 'pembimbing_lapangan'
-                    && unitType === 'Puskesmas'
-                    ? 'Departemen (opsional)'
-                    : 'Departemen';
+
+                const departemenLabel = document.querySelector('#departemenLabel');
+                if (departemenLabel) {
+                    departemenLabel.textContent = role === 'pembimbing_lapangan'
+                        && unitType === 'Puskesmas'
+                        ? 'Departemen (opsional)'
+                        : 'Departemen';
+                }
             }
 
-            document.querySelector('#jenisUnitKerja').addEventListener('change', function () {
-                handleSelectRole();
-            });
+            const jenisUnitKerjaEl = document.querySelector('#jenisUnitKerja');
+            if (jenisUnitKerjaEl) {
+                jenisUnitKerjaEl.addEventListener('change', function () {
+                    handleSelectRole();
+                });
+            }
 
-            document.querySelector('#namaUnitKerja').addEventListener('change', function () {
-                updateDepartemenOptions();
-            });
+            const namaUnitKerjaEl = document.querySelector('#namaUnitKerja');
+            if (namaUnitKerjaEl) {
+                namaUnitKerjaEl.addEventListener('change', function () {
+                    updateDepartemenOptions();
+                });
+            }
 
             handleSelectRole();
         </script>

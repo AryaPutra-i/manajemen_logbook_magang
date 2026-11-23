@@ -83,6 +83,11 @@ class UpdateUserRequest extends FormRequest
                 UserRole::MahasiswaMagang->value,
             ];
 
+        $targetUser = $this->route('user');
+        if ($targetUser instanceof User && $targetUser->role === UserRole::Admin->value) {
+            $allowedRoles = [UserRole::Admin->value];
+        }
+
         $allowedUnitTypes = $role === UserRole::DokterMagang->value
             ? ['Puskesmas']
             : ['Dinas_Kesehatan', 'Puskesmas'];

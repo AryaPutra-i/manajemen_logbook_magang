@@ -37,12 +37,12 @@
                         <div class="mb-1 mb-lg-3 input-group">
                             <select onchange="handleSelectRole()" class="form-select" name="role" id="role" required>
                                 <option value="" @selected(!old('role')) disabled>Pilih role</option>
-                                <option value="dokter_magang" @selected(old('role') === 'dokter_magang')>Dokter Magang</option>
-                                <option value="pembimbing_lapangan" @selected(old('role') === 'pembimbing_lapangan')>Pembimbing Lapangan</option>
-                                <option value="mahasiswa_magang" @selected(old('role') === 'mahasiswa_magang')>Mahasiswa Magang</option>
                                 @if ($authUser->role === 'admin')
                                     <option value="admin_unit_kerja" @selected(old('role') === 'admin_unit_kerja')>Admin Unit Kerja</option>
                                 @endif
+                                <option value="dokter_magang" @selected(old('role') === 'dokter_magang')>Dokter Magang</option>
+                                <option value="pembimbing_lapangan" @selected(old('role') === 'pembimbing_lapangan')>Pembimbing Lapangan</option>
+                                <option value="mahasiswa_magang" @selected(old('role') === 'mahasiswa_magang')>Mahasiswa Magang</option>
                             </select>
                         </div>
                     </div>
@@ -202,7 +202,6 @@
                 document.querySelector('[data-role-group="penempatan"]').classList.toggle('d-none', !requiresPlacement);
                 document.querySelector('[data-role-group="departemen"]').classList.toggle('d-none', !isStudent && !isSupervisor);
 
-                // Jika login sebagai admin_unit_kerja, kunci jenis & unit kerja
                 if (!IS_UNIT_ADMIN) {
                     jenisUnitKerjaInput.disabled = !requiresPlacement;
 
@@ -253,7 +252,6 @@
                     unitKerjaInput.value = '';
                 }
 
-                // Jika login sebagai admin_unit_kerja, unit kerja dikunci
                 if (IS_UNIT_ADMIN) return;
 
                 const requiresPuskesmas = unitType === 'Puskesmas'
