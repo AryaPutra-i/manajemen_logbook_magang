@@ -13,6 +13,7 @@
     <link href="https://cdn.datatables.net/v/bs5/dt-3.0.3/date-2.0.0/datatables.min.css" rel="stylesheet"
         integrity="sha384-MndP6nihLREZbkWNJiEzw90+6XgDlD0YC9pC6E32MVI9/gDHoQ4OXbkP4q2sCzEt" crossorigin="anonymous">
     <link rel="stylesheet" href="https://unpkg.com/dropzone@5/dist/min/dropzone.min.css" type="text/css" />
+    @stack('styles')
 </head>
 
 <body class="min-vh-100 min-vw-100 d-lg-flex" style="background-color: #FEFAE0">

@@ -15,7 +15,7 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ route('logbook.store') }}" enctype="multipart/form-data" class="row">
+        <form id="formTambahLogDokter" method="POST" action="{{ route('logbook.store') }}" enctype="multipart/form-data" class="row">
             @csrf
 
             <div class="px-0 col-lg-6 border-bottom border-end">
@@ -101,10 +101,10 @@
                         onclick="this.showPicker()" name="tanggal" id="tanggal" placeholder="Pilih tanggal kegiatan">
                 </div>
 
-                <label class="mb-1" for="deskripsi">Deskripsi</label>
-                <div class="mb-3 input-group">
-                    <textarea required class="form-control" name="deskripsi" id="deskripsi"
-                        placeholder="Tuliskan deskripsi singkat mengenai kegiatan" style="height: 96px;">{{ @old('deskripsi') }}</textarea>
+                <label class="mb-1" for="editor-deskripsi">Deskripsi</label>
+                <div class="mb-3">
+                    <div id="editor-deskripsi">{!! old('deskripsi') !!}</div>
+                    <input type="hidden" name="deskripsi" id="deskripsi" value="{{ old('deskripsi') }}">
                 </div>
 
                 <label class="mb-1" for="hambatan">Hambatan</label>
@@ -125,8 +125,62 @@
         </form>
     </section>
 
+    @push('styles')
+        <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
+        <style>
+            .ql-toolbar.ql-snow {
+                background-color: #ffffff;
+                border-top-left-radius: 0.375rem;
+                border-top-right-radius: 0.375rem;
+                border-color: #dee2e6;
+            }
+            .ql-container.ql-snow {
+                background-color: #ffffff;
+                border-bottom-left-radius: 0.375rem;
+                border-bottom-right-radius: 0.375rem;
+                border-color: #dee2e6;
+                font-family: inherit;
+                font-size: 1rem;
+                min-height: 140px;
+            }
+        </style>
+    @endpush
+
     @push('scripts')
+        <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
         <script>
+            const quill = new Quill('#editor-deskripsi', {
+                theme: 'snow',
+                placeholder: 'Tuliskan deskripsi singkat mengenai kegiatan...',
+                modules: {
+                    toolbar: [
+                        [{ 'header': [1, 2, 3, false] }],
+                        ['bold', 'italic', 'underline', 'strike'],
+                        [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                        ['blockquote', 'code-block'],
+                        ['clean']
+                    ]
+                }
+            });
+
+            const formTambahLogDokter = document.querySelector('#formTambahLogDokter');
+            const deskripsiInput = document.querySelector('#deskripsi');
+
+            formTambahLogDokter.addEventListener('submit', function(e) {
+                const text = quill.getText().trim();
+                const isEmpty = !text && (!quill.root.innerHTML || quill.root.innerHTML === '<p><br></p>');
+
+                if (isEmpty) {
+                    deskripsiInput.value = '';
+                    e.preventDefault();
+                    quill.focus();
+                    alert('Deskripsi wajib diisi.');
+                    return false;
+                } else {
+                    deskripsiInput.value = quill.root.innerHTML;
+                }
+            });
+
             let count = {{ $oldDaftarJumlahPasien ? count($oldDaftarJumlahPasien) : 1 }};
             const kategoriPelayananKesehatanColumn = document.querySelector('#kategoriPelayananKesehatanColumn');
             const jumlahPasienColumn = document.querySelector('#jumlahPasienColumn');

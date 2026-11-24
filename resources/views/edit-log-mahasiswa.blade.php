@@ -49,7 +49,7 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('logbook.mahasiswa.update', ['id' => $logMahasiswa->id]) }}"
+            <form id="formEditLogMahasiswa" method="POST" action="{{ route('logbook.mahasiswa.update', ['id' => $logMahasiswa->id]) }}"
                 enctype="multipart/form-data" class="d-flex flex-column">
                 @csrf
                 @method('PUT')
@@ -72,10 +72,15 @@
                     </div>
                 </div>
 
-                <div class="row align-items-center g-2 mb-3">
-                    <label class="col-lg-3 col-form-label" for="deskripsi">Deskripsi</label>
+                <div class="row align-items-start g-2 mb-3">
+                    <label class="col-lg-3 col-form-label" for="editor-deskripsi">Deskripsi</label>
                     <div class="col-lg-9">
-                        <textarea class="form-control" name="deskripsi" id="deskripsi" rows="4" required @disabled($isLogSelesai)>{{ old('deskripsi', $logMahasiswa->deskripsi) }}</textarea>
+                        @if ($isLogSelesai)
+                            <div class="p-3 bg-white rounded border" style="min-height: 100px;">{!! $logMahasiswa->deskripsi !!}</div>
+                        @else
+                            <div id="editor-deskripsi">{!! old('deskripsi', $logMahasiswa->deskripsi) !!}</div>
+                            <input type="hidden" name="deskripsi" id="deskripsi" value="{{ old('deskripsi', $logMahasiswa->deskripsi) }}">
+                        @endif
                     </div>
                 </div>
 
@@ -121,10 +126,10 @@
                     <input class="form-control" id="namaKegiatan" value="{{ $logMahasiswa->nama_kegiatan }}" disabled>
                 </div>
             </div>
-            <div class="row align-items-center g-2 mb-3">
+            <div class="row align-items-start g-2 mb-3">
                 <label class="col-lg-3 col-form-label" for="deskripsi">Deskripsi</label>
                 <div class="col-lg-9">
-                    <textarea class="form-control" id="deskripsi" rows="4" disabled>{{ $logMahasiswa->deskripsi }}</textarea>
+                    <div class="p-3 bg-white rounded border" style="min-height: 100px;">{!! $logMahasiswa->deskripsi !!}</div>
                 </div>
             </div>
             <div class="row align-items-center g-2 mb-3">
@@ -159,4 +164,64 @@
             <a href="{{ route('logbook.index') }}" class="btn btn-secondary align-self-lg-end">Kembali</a>
         @endif
     </section>
+
+    @if ($user->role === 'mahasiswa_magang' && !$isLogSelesai)
+        @push('styles')
+            <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
+            <style>
+                .ql-toolbar.ql-snow {
+                    background-color: #ffffff;
+                    border-top-left-radius: 0.375rem;
+                    border-top-right-radius: 0.375rem;
+                    border-color: #dee2e6;
+                }
+                .ql-container.ql-snow {
+                    background-color: #ffffff;
+                    border-bottom-left-radius: 0.375rem;
+                    border-bottom-right-radius: 0.375rem;
+                    border-color: #dee2e6;
+                    font-family: inherit;
+                    font-size: 1rem;
+                    min-height: 180px;
+                }
+            </style>
+        @endpush
+
+        @push('scripts')
+            <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
+            <script>
+                const quill = new Quill('#editor-deskripsi', {
+                    theme: 'snow',
+                    placeholder: 'Tuliskan deskripsi kegiatan...',
+                    modules: {
+                        toolbar: [
+                            [{ 'header': [1, 2, 3, false] }],
+                            ['bold', 'italic', 'underline', 'strike'],
+                            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                            ['blockquote', 'code-block'],
+                            ['clean']
+                        ]
+                    }
+                });
+
+                const formEditLog = document.querySelector('#formEditLogMahasiswa');
+                const deskripsiInput = document.querySelector('#deskripsi');
+
+                formEditLog.addEventListener('submit', function(e) {
+                    const text = quill.getText().trim();
+                    const isEmpty = !text && (!quill.root.innerHTML || quill.root.innerHTML === '<p><br></p>');
+
+                    if (isEmpty) {
+                        deskripsiInput.value = '';
+                        e.preventDefault();
+                        quill.focus();
+                        alert('Deskripsi wajib diisi.');
+                        return false;
+                    } else {
+                        deskripsiInput.value = quill.root.innerHTML;
+                    }
+                });
+            </script>
+        @endpush
+    @endif
 </x-home-layout>

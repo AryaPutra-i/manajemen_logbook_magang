@@ -101,10 +101,14 @@
                         value="{{ old('tanggal', $logMagang->tanggal->format('Y-m-d')) }}" onclick="this.showPicker()">
                 </div>
 
-                <label class="mb-1" for="deskripsi">Deskripsi</label>
-                <div class="mb-3 input-group">
-                    <textarea @if ($user->role !== 'dokter_magang' || $logMagang->status_verifikasi === 'selesai') disabled @endif required class="form-control" name="deskripsi"
-                        id="deskripsi" placeholder="Tuliskan deskripsi singkat mengenai kegiatan" style="height: 96px;">{{ old('deskripsi', $logMagang->deskripsi) }}</textarea>
+                <label class="mb-1" for="editor-deskripsi">Deskripsi</label>
+                <div class="mb-3">
+                    @if ($user->role !== 'dokter_magang' || $logMagang->status_verifikasi === 'selesai')
+                        <div class="p-3 bg-white rounded border" style="min-height: 96px;">{!! $logMagang->deskripsi !!}</div>
+                    @else
+                        <div id="editor-deskripsi">{!! old('deskripsi', $logMagang->deskripsi) !!}</div>
+                        <input type="hidden" name="deskripsi" id="deskripsi" value="{{ old('deskripsi', $logMagang->deskripsi) }}">
+                    @endif
                 </div>
 
                 <label class="mb-1" for="hambatan">Hambatan</label>
@@ -200,9 +204,69 @@
                 document.querySelector(`#deleteKategori-${index}`).remove();
             }
 
-            document.querySelector('#dokumentasi').addEventListener('change', function() {
-                document.querySelector('#linkDokumentasi').remove();
+            document.querySelector('#dokumentasi')?.addEventListener('change', function() {
+                document.querySelector('#linkDokumentasi')?.remove();
             });
         </script>
     @endpush
+
+    @if ($user->role === 'dokter_magang' && $logMagang->status_verifikasi !== 'selesai')
+        @push('styles')
+            <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
+            <style>
+                .ql-toolbar.ql-snow {
+                    background-color: #ffffff;
+                    border-top-left-radius: 0.375rem;
+                    border-top-right-radius: 0.375rem;
+                    border-color: #dee2e6;
+                }
+                .ql-container.ql-snow {
+                    background-color: #ffffff;
+                    border-bottom-left-radius: 0.375rem;
+                    border-bottom-right-radius: 0.375rem;
+                    border-color: #dee2e6;
+                    font-family: inherit;
+                    font-size: 1rem;
+                    min-height: 140px;
+                }
+            </style>
+        @endpush
+
+        @push('scripts')
+            <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
+            <script>
+                const quill = new Quill('#editor-deskripsi', {
+                    theme: 'snow',
+                    placeholder: 'Tuliskan deskripsi singkat mengenai kegiatan...',
+                    modules: {
+                        toolbar: [
+                            [{ 'header': [1, 2, 3, false] }],
+                            ['bold', 'italic', 'underline', 'strike'],
+                            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                            ['blockquote', 'code-block'],
+                            ['clean']
+                        ]
+                    }
+                });
+
+                const editLogForm = document.querySelector('#editLog');
+                const deskripsiInput = document.querySelector('#deskripsi');
+
+                editLogForm.addEventListener('submit', function(e) {
+                    const text = quill.getText().trim();
+                    const isEmpty = !text && (!quill.root.innerHTML || quill.root.innerHTML === '<p><br></p>');
+
+                    if (isEmpty) {
+                        deskripsiInput.value = '';
+                        e.preventDefault();
+                        quill.focus();
+                        alert('Deskripsi wajib diisi.');
+                        return false;
+                    } else {
+                        deskripsiInput.value = quill.root.innerHTML;
+                    }
+                });
+            </script>
+        @endpush
+    @endif
 </x-home-layout>

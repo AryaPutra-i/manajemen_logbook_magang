@@ -141,7 +141,7 @@
                                             <td>{{ $logMagang->tanggal->isoFormat('YYYY-MM-DD') }}</td>
                                             <td>{{ $logMagang->unitKerja?->nama ?? '-' }}</td>
                                             <td>{{ $logMagang->dokterMagang?->username ?? '-' }}</td>
-                                            <td>{{ $logMagang->deskripsi }}</td>
+                                            <td>{!! strip_tags($logMagang->deskripsi) !!}</td>
                                             <td>{{ $logMagang->hambatan }}</td>
                                             <td>
                                                 @if ($logMagang->dokumentasi)
@@ -231,7 +231,7 @@
                                             <td>{{ $logMahasiswa->unitKerja?->nama ?? $logMahasiswa->departemen?->nama ?? '-' }}</td>
                                             <td>{{ $logMahasiswa->mahasiswaMagang?->username ?? '-' }}</td>
                                             <td>{{ $logMahasiswa->nama_kegiatan }}</td>
-                                            <td>{{ $logMahasiswa->deskripsi }}</td>
+                                            <td>{!! strip_tags($logMahasiswa->deskripsi) !!}</td>
                                             <td>
                                                 @if ($logMahasiswa->dokumentasi)
                                                     <a target="_blank" rel="noopener"
