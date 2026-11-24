@@ -19,34 +19,18 @@ class ManajemenDepartemen extends Controller
 
     public function index(Request $request)
     {
-        $perPage = (int) $request->input('per_page', 10);
-
-        $unitKerjaInput = $request->input('unit_kerja');
-        if ($unitKerjaInput === null && $request->has('unit_kerjas')) {
-            $unitKerjasParam = $request->input('unit_kerjas');
-            $unitKerjaInput = is_array($unitKerjasParam) ? ($unitKerjasParam[0] ?? null) : $unitKerjasParam;
-        }
-
-        $filters = [
-            'tanggal_mulai' => $request->input('tanggalMulaiPembuatanDepartemen') ?: $request->input('tanggal_mulai'),
-            'tanggal_akhir' => $request->input('tanggalAkhirPembuatanDepartemen') ?: $request->input('tanggal_akhir'),
-            'unit_kerja' => $unitKerjaInput,
-        ];
-
         $user = $request->user();
-        if ($user->role === 'admin_unit_kerja') {
-            $filters['unit_kerja_id'] = $user->unit_kerja_id;
-            $unitKerjas = $this->manajemenDepartemenService
-                ->getUnitKerjaData($user->unit_kerja_id);
-        } else {
-            $unitKerjas = $this->manajemenDepartemenService
-                ->getUnitKerjaData();
+
+        if ($request->ajax() || $request->wantsJson() || $request->has('draw')) {
+            return response()->json(
+                $this->manajemenDepartemenService->getDataTableData($request, $user)
+            );
         }
 
-        $departemens = $this->manajemenDepartemenService
-            ->getPageData($perPage, $filters);
+        $unitKerjaId = $user->role === 'admin_unit_kerja' ? $user->unit_kerja_id : null;
+        $unitKerjas = $this->manajemenDepartemenService->getUnitKerjaData($unitKerjaId);
 
-        return view('manajemen-departemen', compact('departemens', 'unitKerjas'));
+        return view('manajemen-departemen', compact('unitKerjas'));
     }
 
     public function create()

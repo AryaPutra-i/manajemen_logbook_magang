@@ -1,4 +1,3 @@
-
 <x-home-layout>
     <section class="p-4 w-100 d-flex flex-column gap-3">
 
@@ -6,8 +5,7 @@
         @if (session('success'))
             <div class="alert alert-success alert-dismissible fade show">
                 {{ session('success') }}
-                <button type="button" class="btn-close"
-                    data-bs-dismiss="alert"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         @endif
 
@@ -22,21 +20,13 @@
             </div>
         @endif
 
-         <div>
-                   
-            <p class="mb-0 p-2 fw-bold"
-                style="background-color: #283618; color: #FEFAE0;">
+        <div>
+            <p class="mb-0 p-2 fw-bold" style="background-color: #283618; color: #FEFAE0;">
                 Filter
             </p>
 
-            <form method="GET"
-                action="{{ route('manajemen-departemen.index') }}"
-                style="background-color: #606C38;"
-                class="p-3">
-
-                <label style="color: #FEFAE0;"
-                    class="fw-bold form-label"
-                    for="tanggalMulaiPembuatanDepartemen">
+            <form id="filterForm" style="background-color: #606C38;" class="p-3">
+                <label style="color: #FEFAE0;" class="fw-bold form-label" for="tanggalMulaiPembuatanDepartemen">
                     Tanggal Pembuatan Departemen
                 </label>
 
@@ -54,9 +44,7 @@
                         value="{{ request('tanggalAkhirPembuatanDepartemen') }}">
                 </div>
 
-                <label style="color: #FEFAE0;"
-                    class="fw-bold mt-3 form-label"
-                    for="filterUnitKerja">
+                <label style="color: #FEFAE0;" class="fw-bold mt-3 form-label" for="filterUnitKerja">
                     Unit Kerja
                 </label>
 
@@ -77,20 +65,14 @@
                 </datalist>
 
                 <div class="d-flex align-items-center gap-2 mt-4">
-                    <button class="btn btn-primary"
-                        type="submit"
-                        id="filterButton">
+                    <button class="btn btn-primary" type="submit" id="filterButton">
                         Terapkan Filter
                     </button>
 
-                    @if (request()->filled('tanggalMulaiPembuatanDepartemen') || request()->filled('tanggalAkhirPembuatanDepartemen') || request()->filled('unit_kerja') || request()->filled('unit_kerjas'))
-                        <a href="{{ route('manajemen-departemen.index') }}"
-                            class="btn btn-outline-light">
-                            Reset Filter
-                        </a>
-                    @endif
+                    <button class="btn btn-outline-light" type="button" id="resetFilterButton">
+                        Reset Filter
+                    </button>
                 </div>
-
             </form>
         </div>
 
@@ -103,18 +85,15 @@
                 </p>
             </div>
 
-            <a href="{{ route('manajemen-departemen.create') }}"
-                class="btn btn-primary">
+            <a href="{{ route('manajemen-departemen.create') }}" class="btn btn-primary">
                 <i class="bi bi-plus-square text-white"></i>
                 Tambah Departemen
             </a>
         </div>
 
-        {{-- Tabel departemen --}}
+        {{-- Tabel departemen server side --}}
         <div class="table-responsive">
-            <table class="table table-hover align-middle"
-                id="manajemen-departemen">
-
+            <table class="table table-hover align-middle w-100" id="manajemen-departemen">
                 <thead>
                     <tr>
                         <th>No</th>
@@ -125,89 +104,68 @@
                         <th>Aksi</th>
                     </tr>
                 </thead>
-
-                <tbody class="table-group-divider">
-
-                    @forelse ($departemens as $departemen)
-                        <tr>
-                            <td>
-                                {{ $departemens->firstItem() + $loop->index }}
-                            </td>
-
-                            <td>{{ $departemen->nama }}</td>
-
-                            <td>
-                                {{ $departemen->unitKerja?->nama ?? '-' }}
-                            </td>
-
-                            <td>
-                                @if ($departemen->unitKerja)
-                                    {{ $departemen->unitKerja->jenis === 'Dinas_Kesehatan'
-                                        ? 'Dinas Kesehatan'
-                                        : 'Puskesmas' }}
-                                @else
-                                    -
-                                @endif
-                            </td>
-
-                            <td>
-                                {{ $departemen->created_at?->format('d-m-Y') ?? '-' }}
-                            </td>
-
-                            <td>
-                                <div class="d-flex gap-1">
-
-                                    {{-- Edit --}}
-                                    <a href="{{ route('manajemen-departemen.edit', $departemen->id) }}"
-                                        class="btn btn-success btn-sm">
-                                        <i class="bi bi-pencil-square text-white"></i>
-                                    </a>
-
-                                    {{-- Hapus --}}
-                                    <form
-                                        action="{{ route('manajemen-departemen.destroy', $departemen->id) }}"
-                                        method="POST"
-                                        onsubmit="return confirm('Yakin ingin menghapus departemen ini?')">
-
-                                        @csrf
-                                        @method('DELETE')
-
-                                        <button type="submit"
-                                            class="btn btn-danger btn-sm">
-                                            <i class="bi bi-trash-fill text-white"></i>
-                                        </button>
-                                    </form>
-
-                                </div>
-                            </td>
-                        </tr>
-
-                    @empty
-                        <tr>
-                            <td colspan="6" class="text-center py-4">
-                                Belum ada data departemen.
-                            </td>
-                        </tr>
-                    @endforelse
-
+                <tbody>
                 </tbody>
             </table>
         </div>
 
-        {{-- Pagination Laravel --}}
-        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-
-            <div class="text-muted">
-                Menampilkan {{ $departemens->firstItem() ?? 0 }}
-                sampai {{ $departemens->lastItem() ?? 0 }}
-                dari {{ $departemens->total() }} departemen
-            </div>
-
-            <div>
-                {{ $departemens->links('pagination::bootstrap-5') }}
-            </div>
-
-        </div>
-
     </section>
+
+    @push('scripts')
+        <script>
+            let departemenTable = new DataTable('#manajemen-departemen', {
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: @json(route('manajemen-departemen.index')),
+                    data: function(d) {
+                        d.tanggalMulaiPembuatanDepartemen = document.querySelector('#tanggalMulaiPembuatanDepartemen')?.value;
+                        d.tanggalAkhirPembuatanDepartemen = document.querySelector('#tanggalAkhirPembuatanDepartemen')?.value;
+                        d.unit_kerja = document.querySelector('#filterUnitKerja')?.value;
+                        d.departemen = document.querySelector('#filterDepartemen')?.value;
+                    }
+                },
+                columns: [
+                    { data: 'no', orderable: false, searchable: false },
+                    { data: 'nama', name: 'nama' },
+                    { data: 'unit_kerja', name: 'unit_kerja' },
+                    { data: 'jenis_unit_kerja', name: 'jenis_unit_kerja', orderable: false },
+                    { data: 'tanggal_dibuat', name: 'created_at' },
+                    { data: 'aksi', orderable: false, searchable: false }
+                ],
+                columnDefs: [
+                    { targets: [0, 5], className: 'dt-nowrap' }
+                ],
+                order: [
+                    [4, 'desc']
+                ],
+                language: {
+                    emptyTable: 'Belum ada data departemen.',
+                    zeroRecords: 'Tidak ditemukan data departemen yang sesuai.',
+                    processing: 'Memuat data...',
+                    search: 'Cari:',
+                    lengthMenu: 'Tampilkan _MENU_ data',
+                    info: 'Menampilkan _START_ sampai _END_ dari _TOTAL_ departemen',
+                    infoEmpty: 'Menampilkan 0 sampai 0 dari 0 departemen',
+                    infoFiltered: '(disaring dari _MAX_ total departemen)',
+                    paginate: {
+                        next: '->',
+                        previous: '<-'
+                    }
+                }
+            });
+
+            document.querySelector('#filterForm')?.addEventListener('submit', function(e) {
+                e.preventDefault();
+                departemenTable.draw();
+            });
+
+            document.querySelector('#resetFilterButton')?.addEventListener('click', function() {
+                document.querySelector('#tanggalMulaiPembuatanDepartemen').value = '';
+                document.querySelector('#tanggalAkhirPembuatanDepartemen').value = '';
+                document.querySelector('#filterUnitKerja').value = '';
+                departemenTable.draw();
+            });
+        </script>
+    @endpush
 </x-home-layout>
