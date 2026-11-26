@@ -149,8 +149,8 @@
                     infoEmpty: 'Menampilkan 0 sampai 0 dari 0 departemen',
                     infoFiltered: '(disaring dari _MAX_ total departemen)',
                     paginate: {
-                        next: '->',
-                        previous: '<-'
+                        next: '>',
+                        previous: '<'
                     }
                 }
             });

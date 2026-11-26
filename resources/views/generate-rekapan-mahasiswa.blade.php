@@ -124,7 +124,6 @@
                                     <th rowspan="2">NAMA MAHASISWA</th>
                                     <th colspan="{{ count($bulan['days']) }}">TANGGAL</th>
                                     <th rowspan="2">TOTAL KEGIATAN</th>
-                                    <th rowspan="2">KETERANGAN</th>
                                 </tr>
                                 <tr>
                                     @foreach ($bulan['days'] as $tanggal)
@@ -148,7 +147,6 @@
                                         <td class="text-center">
                                             {{ collect($bulan['days'])->sum(fn($d) => $jumlahMahasiswaPerTanggal[$d->toDateString()] ?? 0) }}
                                         </td>
-                                        <td></td>
                                     </tr>
                                 @empty
                                     <tr>
@@ -171,7 +169,6 @@
                                         <td class="text-center">
                                             {{ collect($bulan['days'])->sum(fn($d) => $totalPerTanggal[$d->toDateString()] ?? 0) }}
                                         </td>
-                                        <td></td>
                                     </tr>
                                 </tfoot>
                             @endif
